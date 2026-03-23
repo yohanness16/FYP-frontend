@@ -5,7 +5,6 @@ export interface User {
   role: "passenger" | "driver" | "admin";
   created_at: string;
 }
-
 export interface Vehicle {
   id: number;
   plate_number: string;
@@ -14,7 +13,6 @@ export interface Vehicle {
   capacity: number | null;
   is_active: boolean;
 }
-
 export interface Stop {
   id: number;
   name: string;
@@ -24,7 +22,6 @@ export interface Stop {
   is_terminal: boolean;
   peak_multiplier: number;
 }
-
 export interface Route {
   id: number;
   route_number: string;
@@ -32,11 +29,7 @@ export interface Route {
   origin: string | null;
   destination: string | null;
 }
-
-export interface RouteWithStops extends Route {
-  stops: Stop[];
-}
-
+export interface RouteWithStops extends Route { stops: Stop[]; }
 export interface Assignment {
   id: number;
   driver_id: number;
@@ -46,7 +39,6 @@ export interface Assignment {
   end_time: string | null;
   status: "active" | "completed" | "cancelled";
 }
-
 export interface DashboardSummary {
   active_assignments: number;
   vehicles: number;
@@ -54,22 +46,7 @@ export interface DashboardSummary {
   users: number;
   telemetry_last_24h: number;
 }
-
-export interface ChartData {
-  labels: string[];
-  data: number[];
-}
-
-export interface ETAAccuracy {
-  heuristic_mae: number;
-  ml_mae: number;
-}
-
-export interface MLStatus {
-  model_loaded: boolean;
-  model_version: string | null;
-}
-
-export interface RouteWithStopsApi extends Route {
-  stops: Stop[];
-}
+export interface ChartData { labels: string[]; data: number[]; }
+export interface ETAAccuracy { heuristic_mae: number; ml_mae: number; }
+export interface MLStatus { model_loaded: boolean; model_version: string | null; }
+export interface CreatedUser { id: number; username: string; email: string; role: string; created_at: string; }

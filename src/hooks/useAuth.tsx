@@ -1,5 +1,4 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { authApi } from "@/lib/api";
 import { User } from "@/types";
@@ -20,20 +19,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const t = localStorage.getItem("token");
+    const t = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (t) {
       setToken(t);
-      authApi
-        .me()
-        .then((r) => setUser(r.data))
-        .catch(() => {
-          localStorage.removeItem("token");
-          setToken(null);
-        })
+      authApi.me().then((r) => setUser(r.data))
+        .catch(() => { localStorage.removeItem("token"); setToken(null); })
         .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    } else { setLoading(false); }
   }, []);
 
   const login = async (username: string, password: string) => {
@@ -47,8 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
+    setToken(null); setUser(null);
     window.location.href = "/login";
   };
 

@@ -1,72 +1,164 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/hooks/useTheme";
-import { useSidebar } from "@/hooks/useSidebar";
 import { useState, useEffect } from "react";
+import { Sun, Moon, Bell } from "lucide-react";
 
-const Sun  = ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
-const Moon = ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
-const Bell = ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
-const Search=()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-
-const TITLES: Record<string,string> = {
-  "/dashboard":   "Dashboard",
-  "/analytics":   "Analytics",
-  "/vehicles":    "Vehicles",
-  "/routes":      "Routes & Stops",
-  "/assignments": "Live Assignments",
-  "/users":       "Users & Drivers",
-  "/drivers":     "Drivers",
-  "/settings":    "Settings & ML",
+const TITLES: Record<string, string> = {
+  "/dashboard": "System Overview",
+  "/analytics": "Fleet Intelligence",
+  "/vehicles": "Vehicle Registry",
+  "/routes": "Network Mapping",
+  "/assignments": "Active Operations",
+  "/users": "Access Control",
+  "/settings": "Core Configuration",
 };
 
 export function Topbar() {
   const pathname = usePathname();
-  const title = TITLES[pathname] || "BusTrack";
+  const title = TITLES[pathname] || "BusTrack Ops";
   const { theme, toggle } = useTheme();
-  const { collapsed } = useSidebar();
   const [time, setTime] = useState(new Date());
-  useEffect(() => { const t = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(t); }, []);
+
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-5"
-      style={{ height:60, background:"var(--bg-card)", borderBottom:"1px solid var(--border)", marginLeft: collapsed ? 64 : 240, transition:"margin-left 0.22s cubic-bezier(0.4,0,0.2,1)" }}>
-      <div>
-        <h1 className="text-[15px] font-semibold" style={{ color:"var(--text-primary)", letterSpacing:"-0.01em" }}>{title}</h1>
-        <p className="text-[11px]" style={{ color:"var(--text-muted)" }}>
-          {time.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}
-          {" · "}<span style={{ fontFamily:"var(--font-mono)" }}>{time.toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit"})}</span>
-        </p>
+    <header style={{
+      height: 64,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "0 24px",
+      background: isDark 
+        ? "rgba(10, 10, 10, 0.2)" 
+        : "linear-gradient(to right, rgba(255, 255, 255, 0.8), rgba(240, 248, 240, 0.7))",
+      backdropFilter: "blur(12px)",
+      borderBottom: isDark ? "1px solid rgba(255, 255, 255, 0.03)" : "1px solid rgba(0, 80, 40, 0.08)",
+      position: "sticky",
+      top: 0,
+      zIndex: 30,
+    }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <h1 style={{ 
+          fontSize: 18, 
+          fontWeight: 800, 
+          color: isDark ? "#fff" : "#142b20", // Deep forest green for contrast
+          letterSpacing: "-0.03em",
+          margin: 0,
+          fontFamily: "'Syne', sans-serif"
+        }}>
+          {title}
+        </h1>
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: 8, 
+          fontSize: 10, 
+          fontWeight: 600,
+          color: isDark ? "var(--text-4)" : "#7a8a81", // Muted sage green
+          fontFamily: "'JetBrains Mono', monospace",
+          letterSpacing: "0.02em"
+        }}>
+          <span>{time.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+          <span style={{ opacity: 0.4 }}>•</span>
+          <span style={{ color: isDark ? "var(--text-2)" : "#4a5a51" }}>
+            {time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+          </span>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {/* Search box — NextAdmin style */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer"
-          style={{ background:"var(--bg-base)", border:"1px solid var(--border)", color:"var(--text-muted)", minWidth:180 }}>
-          <Search/><span>Search…</span>
-          <kbd className="ml-auto text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background:"var(--border)", color:"var(--text-muted)" }}>⌘K</kbd>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Adjusted Live Status */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "6px 14px",
+          borderRadius: 10,
+          background: isDark ? "rgba(0, 255, 153, 0.05)" : "rgba(0, 200, 120, 0.08)",
+          border: isDark ? "1px solid rgba(0, 255, 153, 0.1)" : "1px solid rgba(0, 180, 100, 0.15)",
+        }}>
+          <span style={{ 
+            width: 7, 
+            height: 7, 
+            borderRadius: "50%", 
+            background: "#00ff99", 
+            boxShadow: isDark ? "0 0 10px #00ff99" : "0 0 8px rgba(0, 180, 100, 0.6)",
+            animation: "pulseGlow 2s infinite ease-in-out" 
+          }} />
+          <span style={{ 
+            color: isDark ? "var(--neon)" : "#008a54", // Sharper green for light mode
+            fontSize: 10, 
+            fontWeight: 800, 
+            letterSpacing: "0.08em" 
+          }}>
+            NETWORK LIVE
+          </span>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-          style={{ background:"var(--success-subtle)", color:"var(--success)", border:"1px solid var(--success-border)" }}>
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background:"var(--success)" }}/>Live
-        </div>
+        <div style={{ 
+          width: 1, 
+          height: 24, 
+          background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,80,40,0.1)", 
+          margin: "0 2px" 
+        }} />
 
-        <button onClick={toggle} title={`Switch to ${theme==="dark"?"light":"dark"} mode`}
-          className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
-          style={{ color:"var(--text-secondary)" }}
-          onMouseOver={e=>{(e.currentTarget as HTMLElement).style.background="var(--bg-hover)";(e.currentTarget as HTMLElement).style.color="var(--text-primary)"}}
-          onMouseOut={e=>{(e.currentTarget as HTMLElement).style.background="transparent";(e.currentTarget as HTMLElement).style.color="var(--text-secondary)"}}>
-          {theme==="dark"?<Sun/>:<Moon/>}
+        {/* Buttons with improved light-mode states */}
+        <button onClick={toggle} style={{
+          background: "transparent",
+          border: "none",
+          borderRadius: 10,
+          padding: 8,
+          cursor: "pointer",
+          color: isDark ? "var(--text-2)" : "#4a5a51",
+          display: "flex",
+          alignItems: "center",
+          transition: "background 0.2s",
+        }} className="hover-subtle">
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors relative"
-          style={{ color:"var(--text-secondary)" }}
-          onMouseOver={e=>{(e.currentTarget as HTMLElement).style.background="var(--bg-hover)"}}
-          onMouseOut={e=>{(e.currentTarget as HTMLElement).style.background="transparent"}}>
-          <Bell/>
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ background:"var(--brand)" }}/>
+        <button style={{
+          background: "transparent",
+          border: "none",
+          borderRadius: 10,
+          padding: 8,
+          cursor: "pointer",
+          color: isDark ? "var(--text-2)" : "#4a5a51",
+          position: "relative",
+          display: "flex",
+          alignItems: "center"
+        }} className="hover-subtle">
+          <Bell size={18} />
+          <span style={{ 
+            position: "absolute", 
+            top: 6, 
+            right: 6, 
+            width: 7, 
+            height: 7, 
+            borderRadius: "50%", 
+            background: "#00ff99",
+            border: isDark ? "2px solid #0a0a0a" : "2px solid #fff",
+            boxShadow: isDark ? "none" : "0 2px 4px rgba(0,0,0,0.1)"
+          }} />
         </button>
       </div>
+
+      <style jsx>{`
+        @keyframes pulseGlow {
+          0% { transform: scale(0.95); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .hover-subtle:hover {
+          background: ${isDark ? "rgba(255,255,255,0.05)" : "rgba(0,80,40,0.05)"};
+        }
+      `}</style>
     </header>
   );
 }
