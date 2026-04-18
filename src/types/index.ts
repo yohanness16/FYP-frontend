@@ -21,6 +21,14 @@ export interface Vehicle {
   last_lon?: number;
   speed?: number;
   position_updated_at?: string | null;
+  /** Joined route data (available when backend includes it) */
+  route?: { id: number; route_number: string; name: string | null } | null;
+  /** Joined driver data */
+  driver?: { id: number; name: string; username: string } | null;
+  /** Joined route stops (from some endpoints) */
+  route_stops?: string[];
+  route_name?: string | null;
+  dashboard_password_hash?: string | null;
 }
 
 export interface VehiclePosition {
@@ -32,6 +40,8 @@ export interface VehiclePosition {
   /** Unix seconds from backend */
   timestamp: number;
   route_id?: number | null;
+  pixel_count?: number | null;
+  density_level?: number | null;
 }
 
 export interface Stop {
@@ -50,6 +60,8 @@ export interface Route {
   name: string | null;
   origin: string | null;
   destination: string | null;
+  distance_km?: number | null;
+  stops?: string[] | Stop[];
 }
 
 export interface RouteWithStops extends Route {
@@ -85,6 +97,27 @@ export interface ChartData {
 export interface ETAAccuracy {
   heuristic_mae: number;
   ml_mae: number;
+  sample_count?: number;
+  ml_win_rate?: number;
+  ml_better_count?: number;
+  comparable_count?: number;
+}
+
+export interface DashboardInsights {
+  days: number;
+  top_route: {
+    id: number;
+    route_number: string;
+    name: string | null;
+    trips: number;
+  } | null;
+  top_vehicle: {
+    id: number;
+    plate_number: string;
+    trips: number;
+  } | null;
+  busiest_hours: Array<{ hour: number; trips: number }>;
+  top_routes_by_hour: Array<{ hour: number; top_route_number: string; top_route_trips: number }>;
 }
 
 export interface MLStatus {
@@ -103,6 +136,33 @@ export interface CreatedUser {
   username: string;
   email: string;
   role: string;
+  created_at: string;
+}
+
+export interface CvData {
+  people_count: number;
+  crowd_density: number;
+  is_crowded: boolean;
+  method: string;
+  confidence: number;
+  foreground_ratio: number;
+  image_path: string | null;
+}
+
+export interface TripHistoryEntry {
+  id: number;
+  stop_id: number;
+  stop_name: string | null;
+  arrival_time: string | null;
+  dwell_time: number | null;
+  occupancy_level: number | null;
+}
+
+export interface RideAnnouncement {
+  vehicle_id: number;
+  announcement_type: "next_stop" | "current_stop" | "general";
+  message: string;
+  stop_name: string | null;
   created_at: string;
 }
 
