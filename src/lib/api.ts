@@ -19,8 +19,12 @@ api.interceptors.response.use(
   (r) => r,
   (err) => {
     if (err.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      const url = err.config?.url || "";
+      // Don't auto-redirect for auth endpoints — let the calling code handle it
+      if (!url.includes("/auth/")) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(err);
   }
@@ -29,6 +33,14 @@ api.interceptors.response.use(
 export const authApi = {
   login: (username: string, password: string) =>
     api.post("/auth/login", { username, password }),
+  busDashboardSetup: (vehicle_id: number, password: string) =>
+    api.post("/auth/bus-dashboard/setup", { vehicle_id, password }),
+  busDashboardLogin: (vehicle_id: number, device_id: string, password: string) =>
+    api.post("/auth/bus-dashboard/login", { vehicle_id, device_id, password }),
+  driverLogin: (username: string, password: string, device_id: string, bus_token: string) =>
+    api.post("/auth/driver-login", { username, password, device_id, bus_token }),
+  driverLogout: (session_id: number) =>
+    api.post("/auth/driver-logout", { session_id }),
   me: () => api.get("/auth/me"),
   refresh: () => api.post("/auth/refresh"),
 };
@@ -39,6 +51,7 @@ export const dashboardApi = {
     api.get(`/admin/dashboard/assignments-over-time?days=${days}`),
   occupancyDistribution: () => api.get("/admin/dashboard/occupancy-distribution"),
   etaAccuracy: () => api.get("/admin/dashboard/eta-accuracy"),
+  insights: (days = 30) => api.get(`/admin/dashboard/insights?days=${days}`),
   routeUsage: (days = 30) => api.get(`/admin/dashboard/route-usage?days=${days}`),
   telemetryVolume: () => api.get("/admin/dashboard/telemetry-volume"),
 };
@@ -123,4 +136,25 @@ export const assignmentsApi = {
     api.post("/assignments/start", { driver_id, vehicle_id, route_id }),
   end: (assignment_id: number) =>
     api.post("/assignments/end", { assignment_id }),
+};
+
+export const crowdApi = {
+  getByPlate: (plate_number: string) =>
+    api.get(`/admin/crowd/${encodeURIComponent(plate_number)}`),
+};
+
+export const tripHistoryApi = {
+  getByVehicle: (vehicle_id: number) =>
+    api.get(`/admin/trip-history/vehicle/${vehicle_id}`),
+  getByAssignment: (assignment_id: number) =>
+    api.get(`/admin/trip-history/assignment/${assignment_id}`),
+};
+
+export const announcementsApi = {
+  create: (data: {
+    vehicle_id: number;
+    announcement_type: "next_stop" | "current_stop" | "general";
+    message: string;
+    stop_name?: string | null;
+  }) => api.post("/admin/announcements", data),
 };
