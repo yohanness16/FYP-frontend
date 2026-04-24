@@ -17,7 +17,15 @@ export default function LoginPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(""); setBusy(true);
-    try { await login(username, password); router.replace("/dashboard"); }
+    try {
+      await login(username, password);
+      // Set cookie for middleware auth check
+      const token = localStorage.getItem("token");
+      if (token) {
+        document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+      }
+      router.replace("/dashboard");
+    }
     catch (err: unknown) { setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Invalid credentials"); }
     finally { setBusy(false); }
   };
