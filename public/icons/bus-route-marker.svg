@@ -1,0 +1,26 @@
+<svg width="76" height="92" viewBox="0 0 76 92" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Bus Route Marker</title>
+  <desc id="desc">Map marker with a yellow bus icon</desc>
+  <defs>
+    <linearGradient id="pinBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2c7be5"/>
+      <stop offset="100%" stop-color="#1153a4"/>
+    </linearGradient>
+    <linearGradient id="busBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd65c"/>
+      <stop offset="100%" stop-color="#e8a711"/>
+    </linearGradient>
+  </defs>
+  <path d="M38 89c9-16 30-30 30-52C68 17 54 3 38 3S8 17 8 37c0 22 21 36 30 52z" fill="url(#pinBody)" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="38" cy="37" r="23" fill="#f4fbff" stroke="#d5e8ff" stroke-width="1.5"/>
+  <g transform="translate(20 22)">
+    <rect x="2" y="4" width="32" height="21" rx="5" fill="url(#busBody)" stroke="#8f6100" stroke-width="1.2"/>
+    <rect x="5" y="7" width="26" height="6" rx="2" fill="#d9f0ff" stroke="#77aad7" stroke-width="0.8"/>
+    <rect x="6" y="14.5" width="9" height="6" rx="1.2" fill="#f7fbff" stroke="#8bb9da" stroke-width="0.8"/>
+    <rect x="16.5" y="14.5" width="7" height="6" rx="1.2" fill="#f7fbff" stroke="#8bb9da" stroke-width="0.8"/>
+    <rect x="24.5" y="14.5" width="6" height="6" rx="1.2" fill="#eaf6ff" stroke="#8bb9da" stroke-width="0.8"/>
+    <circle cx="10" cy="25" r="3.4" fill="#283645" stroke="#f4f8fc" stroke-width="1.2"/>
+    <circle cx="26" cy="25" r="3.4" fill="#283645" stroke="#f4f8fc" stroke-width="1.2"/>
+    <text x="18" y="11.5" text-anchor="middle" font-size="4.2" font-family="Arial, sans-serif" font-weight="700" fill="#0a4f7a">BUS</text>
+  </g>
+</svg>
