@@ -379,9 +379,25 @@ html:not(.light) body::before {
 
 /* ── LEAFLET DARK ── */
 html:not(.light) .leaflet-tile {
-  filter: brightness(0.3) invert(1) hue-rotate(160deg) saturate(0.5) brightness(0.7);
+  filter: brightness(0.78) contrast(1.08) saturate(0.88);
 }
-html:not(.light) .leaflet-container { background: #030507; }
+html:not(.light) .leaflet-container { background: #08101a; }
+html:not(.light) .leaflet-control-zoom a {
+  background: rgba(6, 14, 25, 0.9);
+  color: #d3f4ff;
+  border-color: rgba(91, 231, 255, 0.35);
+}
+html:not(.light) .leaflet-control-zoom a:hover {
+  background: rgba(15, 31, 51, 0.96);
+  color: #ffffff;
+}
+html:not(.light) .leaflet-control-attribution {
+  background: rgba(4, 9, 16, 0.75);
+  color: #a8cad8;
+}
+html:not(.light) .leaflet-control-attribution a {
+  color: #cbefff;
+}
 
 /* ── RECHARTS ── */
 .recharts-tooltip-wrapper { outline: none !important; }
