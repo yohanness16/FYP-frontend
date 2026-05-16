@@ -3,13 +3,15 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "@/hooks/useTheme";
 import { useState, useEffect } from "react";
 import { Sun, Moon, Bell } from "lucide-react";
+import { formatClock, getLocalTimeZone } from "@/lib/time";
 
 const TITLES: Record<string, string> = {
   "/dashboard": "System Overview",
   "/analytics": "Fleet Intelligence",
   "/vehicles": "Vehicle Registry",
   "/routes": "Network Mapping",
-  "/assignments": "Active Operations",
+  "/routes/routes": "Route Management",
+  "/routes/assignments": "Active Operations",
   "/users": "Access Control",
   "/settings": "Core Configuration",
 };
@@ -67,8 +69,10 @@ export function Topbar() {
           <span>{time.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
           <span style={{ opacity: 0.4 }}>•</span>
           <span style={{ color: isDark ? "var(--text-2)" : "#4a5a51" }}>
-            {time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+            {formatClock(time)}
           </span>
+          <span style={{ opacity: 0.35 }}>•</span>
+          <span>{getLocalTimeZone()}</span>
         </div>
       </div>
 
