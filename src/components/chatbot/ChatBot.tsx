@@ -59,7 +59,12 @@ export function ChatBot() {
         body: JSON.stringify({ message: text.trim(), history: messages.slice(-8), systemPrompt: SYSTEM_PROMPT }),
       });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: "assistant", content: data.text || "I couldn't process that." }]);
+      if (!res.ok) {
+        const errText = data?.detail || data?.error || `HTTP ${res.status}`;
+        setMessages(prev => [...prev, { role: "assistant", content: `Chat error: ${errText}` }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: data.text || "I couldn't process that." }]);
+      }
     } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Connection error." }]);
     } finally { setLoading(false); }

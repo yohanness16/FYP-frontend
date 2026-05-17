@@ -7,6 +7,7 @@ export interface ColDef<T> {
   label: string;
   sortable?: boolean;
   align?: "left" | "center" | "right";
+  width?: string;
   render?: (row: T) => ReactNode;
   getValue?: (row: T) => string | number;
 }
@@ -27,6 +28,7 @@ interface Props<T> {
   pageSize?: number;
   emptyMessage?: string;
   title?: string;
+  subtitle?: string;
   onAdd?: () => void;
   addLabel?: string;
   toolbar?: ReactNode;
@@ -61,9 +63,23 @@ function ActionMenu<T>({ row, actions }: { row: T; actions: TableAction<T>[] }) 
   );
 }
 
-export function DataTable<T extends Record<string, unknown>>({
-  data, columns, actions, searchPlaceholder = "Search…", searchKeys = [],
-  pageSize = 10, emptyMessage = "No records found", title, onAdd, addLabel = "Add", toolbar,
+function rowVal<T extends object>(row: T, key: string): unknown {
+  return (row as Record<string, unknown>)[key];
+}
+
+export function DataTable<T extends object>({
+  data,
+  columns,
+  actions,
+  searchPlaceholder = "Search…",
+  searchKeys = [],
+  pageSize = 10,
+  emptyMessage = "No records found",
+  title,
+  subtitle,
+  onAdd,
+  addLabel = "Add",
+  toolbar,
 }: Props<T>) {
   const [q, setQ] = useState("");
   const [sk, setSk] = useState("");
@@ -74,16 +90,21 @@ export function DataTable<T extends Record<string, unknown>>({
     let r = [...data];
     if (q) {
       const lq = q.toLowerCase();
-      r = r.filter(row => {
-        if (searchKeys.length) return searchKeys.some(k => String(row[k] ?? "").toLowerCase().includes(lq));
-        return Object.values(row).some(v => String(v ?? "").toLowerCase().includes(lq));
+      r = r.filter((row) => {
+        if (searchKeys.length)
+          return searchKeys.some((k) =>
+            String(rowVal(row, k) ?? "").toLowerCase().includes(lq)
+          );
+        return Object.values(row as object).some((v) =>
+          String(v ?? "").toLowerCase().includes(lq)
+        );
       });
     }
     if (sk) {
       r.sort((a, b) => {
         const col = columns.find(c => c.key === sk);
-        const av = col?.getValue ? String(col.getValue(a)) : String(a[sk] ?? "");
-        const bv = col?.getValue ? String(col.getValue(b)) : String(b[sk] ?? "");
+        const av = col?.getValue ? String(col.getValue(a)) : String(rowVal(a, sk) ?? "");
+        const bv = col?.getValue ? String(col.getValue(b)) : String(rowVal(b, sk) ?? "");
         return sd === "asc" ? av.localeCompare(bv, undefined, { numeric:true }) : bv.localeCompare(av, undefined, { numeric:true });
       });
     }
@@ -95,9 +116,14 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-      {(title || onAdd || toolbar) && (
+      {(title || subtitle || onAdd || toolbar) && (
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-          {title && <h3 className="section-title">{title}</h3>}
+          <div>
+            {title && <h3 className="section-title">{title}</h3>}
+            {subtitle && (
+              <p style={{ fontSize: 12, color: "var(--text3)", marginTop: 4 }}>{subtitle}</p>
+            )}
+          </div>
           <div style={{ display:"flex", gap:8 }}>
             {toolbar}
             {onAdd && <button className="btn-primary" onClick={onAdd}><Plus size={14} />{addLabel}</button>}
@@ -119,7 +145,7 @@ export function DataTable<T extends Record<string, unknown>>({
               <tr className="tbl-head">
                 {columns.map(col => (
                   <th key={col.key} className={`tbl-th ${col.sortable ? "sort":""}`}
-                    style={{ textAlign:col.align || "left" }}
+                    style={{ textAlign: col.align || "left", width: col.width }}
                     onClick={() => { if (!col.sortable) return; if (sk === col.key) setSd(d => d==="asc"?"desc":"asc"); else { setSk(col.key); setSd("asc"); } setPage(1); }}>
                     <span style={{ display:"inline-flex", alignItems:"center", gap:4 }}>
                       {col.label}
@@ -143,7 +169,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <tr key={i} className="tbl-row">
                   {columns.map(col => (
                     <td key={col.key} className="tbl-td" style={{ textAlign:col.align||"left" }}>
-                      {col.render ? col.render(row) : String(row[col.key] ?? "—")}
+                      {col.render ? col.render(row) : String(rowVal(row, col.key) ?? "—")}
                     </td>
                   ))}
                   {actions && <td className="tbl-td" style={{ padding:"8px 10px" }}><ActionMenu row={row} actions={actions} /></td>}

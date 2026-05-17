@@ -21,41 +21,37 @@ const DEFAULT_CENTER: [number, number] = [9.032, 38.752];
 const DEFAULT_ZOOM = 12;
 const FIT_MAX_ZOOM = 15;
 const FIT_PADDING: [number, number] = [48, 48];
+const TILE_LIGHT = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const BUS_ICON_PATH = "/icons/bus-route-marker.svg";
 
 const escapeHtml = (value: string) =>
   value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
 const createBusIcon = (plate: string) => {
   const label = escapeHtml(plate.slice(-4).toUpperCase());
-  const gradientId = `bus-gradient-${plate.replace(/[^a-zA-Z0-9]/g, "").slice(-12) || "live"}`;
   return L.divIcon({
     className: "bus-marker-icon",
     html: `
-      <div style="position: relative; width: 44px; height: 54px; display: flex; flex-direction: column; align-items: center;">
-        <svg width="44" height="46" viewBox="0 0 44 46" aria-hidden="true" style="filter: drop-shadow(0 6px 12px rgba(0, 229, 255, 0.28));">
-          <rect x="8" y="4" width="28" height="34" rx="10" fill="url(#${gradientId})" stroke="#ffffff" stroke-width="2" />
-          <rect x="12" y="10" width="20" height="7" rx="2" fill="rgba(255,255,255,0.24)" />
-          <rect x="12" y="20" width="20" height="5" rx="2" fill="rgba(255,255,255,0.56)" />
-          <rect x="12" y="28" width="20" height="3" rx="1.5" fill="rgba(255,255,255,0.26)" />
-          <circle cx="15" cy="39" r="4" fill="#111827" stroke="#ffffff" stroke-width="2" />
-          <circle cx="29" cy="39" r="4" fill="#111827" stroke="#ffffff" stroke-width="2" />
-          <defs>
-            <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#00ffb4" />
-              <stop offset="100%" stop-color="#00e5ff" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <div style="margin-top: -2px; padding: 2px 8px; border-radius: 999px; background: rgba(4, 10, 20, 0.92); color: #e8fffd; border: 1px solid rgba(255,255,255,0.22); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; box-shadow: 0 6px 12px rgba(0,0,0,0.25);">
-          BUS {label || "LIVE"}
+      <div style="position: relative; width: 58px; height: 76px; display: flex; align-items: center; justify-content: center;">
+        <img src="${BUS_ICON_PATH}" alt="Bus marker" width="58" height="76" style="display:block; filter: drop-shadow(0 6px 10px rgba(9, 34, 63, 0.3));" />
+        <div style="position:absolute; left:50%; top:56px; transform:translateX(-50%); padding:1px 6px; border-radius:999px; background:rgba(6,16,30,0.84); color:#ecf9ff; font-size:9px; font-weight:700; letter-spacing:0.06em; border:1px solid rgba(255,255,255,0.28);">
+          ${label || "LIVE"}
         </div>
       </div>
     `,
-    iconSize: [44, 54],
-    iconAnchor: [22, 40],
-    popupAnchor: [0, -36],
+    iconSize: [58, 76],
+    iconAnchor: [29, 72],
+    popupAnchor: [0, -66],
   });
 };
+
+function densityMeta(level: number | null | undefined) {
+  if (level === 2) return { label: "High", color: "#e11d48" };
+  if (level === 1) return { label: "Medium", color: "#d97706" };
+  if (level === 0) return { label: "Low", color: "#15803d" };
+  return { label: "Unknown", color: "#475569" };
+}
 
 function parseVehiclesList(data: unknown): Vehicle[] {
   if (Array.isArray(data)) return data as Vehicle[];
@@ -117,6 +113,12 @@ interface RealTimeBusMapProps {
   vehicles?: Vehicle[];
   /** When set, only buses assigned to this route (by route_id) are shown. */
   routeFilterId?: number | null;
+  /** Optional density filter (0 low, 1 medium, 2 high). */
+  densityFilter?: number | null;
+  /** Optional minimum seat capacity filter. */
+  minCapacity?: number;
+  /** Optional list of route IDs allowed by stop-level filter. */
+  allowedRouteIds?: number[] | null;
   autoRefresh?: boolean;
   /** How often to poll live positions (REST fallback; slower when WebSocket is on). */
   positionIntervalMs?: number;
@@ -129,6 +131,9 @@ interface RealTimeBusMapProps {
 export const RealTimeBusMap: React.FC<RealTimeBusMapProps> = ({
   vehicles = [],
   routeFilterId = null,
+  densityFilter = null,
+  minCapacity = 0,
+  allowedRouteIds = null,
   autoRefresh = true,
   positionIntervalMs = 5000,
   useLiveWs = false,
@@ -219,8 +224,22 @@ export const RealTimeBusMap: React.FC<RealTimeBusMapProps> = ({
   }, [positions, wsPositions]);
 
   const filtered = vehiclesData.filter((v) => {
-    if (routeFilterId == null || routeFilterId === 0) return true;
-    return v.route_id === routeFilterId;
+    if (routeFilterId != null && routeFilterId !== 0 && v.route_id !== routeFilterId) {
+      return false;
+    }
+    if ((v.capacity ?? 0) < minCapacity) {
+      return false;
+    }
+    if (Array.isArray(allowedRouteIds) && allowedRouteIds.length > 0) {
+      if (v.route_id == null || !allowedRouteIds.includes(v.route_id)) {
+        return false;
+      }
+    }
+    if (densityFilter != null) {
+      const pos = mergedPositions[String(v.id)];
+      return pos?.density_level === densityFilter;
+    }
+    return true;
   });
 
   const posFresh = (pos: VehiclePosition | undefined) => {
@@ -333,10 +352,7 @@ export const RealTimeBusMap: React.FC<RealTimeBusMapProps> = ({
         minZoom={8}
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
+        <TileLayer url={TILE_LIGHT} attribution={TILE_ATTR} />
 
         <MapFitBounds
           points={fitPoints}
@@ -350,9 +366,9 @@ export const RealTimeBusMap: React.FC<RealTimeBusMapProps> = ({
           <Polyline
             positions={routeLine}
             pathOptions={{
-              color: "#00e5ff",
+              color: "#0077bb",
               weight: 4,
-              opacity: 0.85,
+              opacity: 0.82,
             }}
           />
         )}
@@ -362,19 +378,29 @@ export const RealTimeBusMap: React.FC<RealTimeBusMapProps> = ({
           const lat = pos?.lat ?? vehicle.last_lat ?? DEFAULT_CENTER[0];
           const lon = pos?.lon ?? vehicle.last_lon ?? DEFAULT_CENTER[1];
           const active = posFresh(pos);
+          const density = densityMeta(pos?.density_level);
 
           return (
             <Marker
               key={vehicle.id}
               position={[lat, lon]}
               icon={createBusIcon(vehicle.plate_number)}
+              eventHandlers={{
+                click: (event) => {
+                  event.target.openPopup();
+                },
+              }}
             >
-              <Popup>
+              <Popup className="bus-popup">
                 <div style={{ fontWeight: "bold", fontSize: "14px" }}>
                   {vehicle.plate_number}
                 </div>
                 <div style={{ fontSize: "12px", marginTop: 4 }}>
                   <div>Live GPS: {active ? "🟢 recent" : "⚪ stale / last known"}</div>
+                  <div>
+                    Density: <strong style={{ color: density.color }}>{density.label}</strong>
+                    {pos?.pixel_count != null ? ` (${pos.pixel_count} px)` : ""}
+                  </div>
                   <div>
                     Speed: {(pos?.speed ?? vehicle.speed ?? 0).toFixed(1)} km/h
                   </div>
@@ -413,10 +439,23 @@ export const RealTimeBusMap: React.FC<RealTimeBusMapProps> = ({
       <style jsx>{`
         .map-container {
           position: relative;
-          background: #0a0e1a;
+          background: #d8e4f0;
         }
         .map-container :global(.leaflet-container) {
           z-index: 0;
+          background: #d8e4f0;
+        }
+        .map-container :global(.leaflet-tile) {
+          filter: none !important;
+        }
+        .map-container :global(.bus-popup .leaflet-popup-content-wrapper) {
+          background: rgba(255, 255, 255, 0.99);
+          color: #0c2438;
+          border: 1px solid rgba(10, 60, 92, 0.24);
+          box-shadow: 0 10px 28px rgba(18, 58, 92, 0.18);
+        }
+        .map-container :global(.bus-popup .leaflet-popup-tip) {
+          background: rgba(255, 255, 255, 0.99);
         }
         .leaflet-marker-icon {
           transition: transform 0.2s ease;
