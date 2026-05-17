@@ -17,6 +17,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
+import { formatDateTime, getLocalTimeZone } from "@/lib/time";
 
 function Toast({ msg, type, onClose }: { msg: string; type: "success" | "error"; onClose: () => void }) {
   useEffect(() => {
@@ -28,9 +29,9 @@ function Toast({ msg, type, onClose }: { msg: string; type: "success" | "error";
     <div
       style={{
         position: "fixed",
-        top: 16,
+        top: 76,
         right: 16,
-        zIndex: 60,
+        zIndex: 80,
         display: "flex",
         alignItems: "center",
         gap: 8,
@@ -73,8 +74,13 @@ export default function SettingsPage() {
   const [preview, setPreview] = useState<Partial<EtaPreviewResult> | null>(null);
   const [previewForm, setPreviewForm] = useState(previewDefaults);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [opLog, setOpLog] = useState<Array<{ ts: string; action: string; output: string; type: "success" | "error" }>>([]);
 
   const showToast = (msg: string, type: "success" | "error") => setToast({ msg, type });
+  const pushLog = (action: string, output: string, type: "success" | "error") => {
+    const entry = { ts: formatDateTime(new Date()), action, output, type };
+    setOpLog((prev) => [entry, ...prev].slice(0, 10));
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,10 +101,14 @@ export default function SettingsPage() {
     setTraining(true);
     try {
       const response = await adminApi.trainModel();
-      showToast(response.data.message || "Model trained successfully", "success");
+      const msg = response.data.message || "Model trained successfully";
+      showToast(msg, "success");
+      pushLog("Train Model", msg, "success");
       await load();
     } catch (error: unknown) {
-      showToast((error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Training failed", "error");
+      const msg = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Training failed";
+      showToast(msg, "error");
+      pushLog("Train Model", msg, "error");
     } finally {
       setTraining(false);
     }
@@ -109,9 +119,12 @@ export default function SettingsPage() {
     setCleaning(true);
     try {
       const response = await adminApi.cleanup();
-      showToast(`Deleted ${response.data.raw_telemetry_deleted} telemetry + ${response.data.trip_history_deleted} history records`, "success");
+      const msg = `Deleted ${response.data.raw_telemetry_deleted} telemetry + ${response.data.trip_history_deleted} history records`;
+      showToast(msg, "success");
+      pushLog("Run Cleanup", msg, "success");
     } catch {
       showToast("Cleanup failed", "error");
+      pushLog("Run Cleanup", "Cleanup failed", "error");
     } finally {
       setCleaning(false);
     }
@@ -123,9 +136,12 @@ export default function SettingsPage() {
       const nextValue = !useMl;
       await adminApi.updateSettings(nextValue);
       setUseMl(nextValue);
-      showToast(`Switched to ${nextValue ? "ML Model" : "Heuristic Algorithm"}`, "success");
+      const msg = `Switched to ${nextValue ? "ML Model" : "Heuristic Algorithm"}`;
+      showToast(msg, "success");
+      pushLog("Update ETA Mode", msg, "success");
     } catch {
       showToast("Failed to update setting", "error");
+      pushLog("Update ETA Mode", "Failed to update setting", "error");
     } finally {
       setToggling(false);
     }
@@ -145,8 +161,15 @@ export default function SettingsPage() {
         occupancy_level: Number(previewForm.occupancy_level || 0),
       });
       setPreview(response.data);
+      pushLog(
+        "Run ETA Preview",
+        `eta=${response.data.eta_seconds}s, heuristic=${response.data.heuristic_eta_seconds}s, mode=${response.data.mode}`,
+        "success"
+      );
     } catch (error: unknown) {
-      showToast((error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "ETA preview failed", "error");
+      const msg = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "ETA preview failed";
+      showToast(msg, "error");
+      pushLog("Run ETA Preview", msg, "error");
     } finally {
       setPreviewing(false);
     }
@@ -270,10 +293,35 @@ export default function SettingsPage() {
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, background: "var(--cyan-dim)", border: "1px solid var(--cyan-border)", color: "var(--cyan)", fontSize: 12 }}>
               <Info size={13} />
-              This calls the backend preview endpoint and uses the runtime ML toggle.
+              ETA Preview simulates a trip with your inputs and shows the predicted ETA, heuristic baseline, and active mode.
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Info size={15} color="var(--purple)" />
+            <span className="section-title">Operation Output</span>
+          </div>
+          <span style={{ fontSize: 11, color: "var(--text-4)" }}>Time zone: {getLocalTimeZone()}</span>
+        </div>
+        {opLog.length === 0 ? (
+          <p style={{ fontSize: 12, color: "var(--text-3)" }}>No actions yet. Training, mode switching, and preview results will appear here.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {opLog.map((row, idx) => (
+              <div key={`${row.ts}-${idx}`} style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: `1px solid ${row.type === "success" ? "var(--green-border)" : "var(--red-border)"}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "var(--text)", fontWeight: 600 }}>{row.action}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-4)" }}>{row.ts}</span>
+                </div>
+                <p style={{ marginTop: 4, fontSize: 12, color: row.type === "success" ? "var(--green)" : "var(--red)" }}>{row.output}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card">

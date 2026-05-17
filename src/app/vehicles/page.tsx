@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { routesApi, vehiclesApi } from "@/lib/api";
+import { authApi, routesApi, vehiclesApi } from "@/lib/api";
 import { Route, Vehicle } from "@/types";
 import { PageLoader } from "@/components/ui/Spinner";
 import { DataTable, ColDef, TableAction } from "@/components/ui/DataTable";
@@ -15,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   Route as RouteIcon,
+  Shield,
   Slash,
   Truck,
   XCircle,
@@ -249,12 +250,143 @@ function RegisterVehicleModal({ onClose, onSaved }: { onClose: () => void; onSav
   );
 }
 
+function BusDashboardActivationModal({
+  vehicle,
+  onClose,
+  onSaved,
+}: {
+  vehicle: Vehicle;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError("");
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await authApi.busDashboardSetup(vehicle.id, password);
+      onSaved();
+      onClose();
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+          "Failed to configure dashboard credentials"
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 60,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.72)",
+        backdropFilter: "blur(8px)",
+        padding: 16,
+      }}
+    >
+      <div className="anim-up" style={{ width: "100%", maxWidth: 460, borderRadius: 18, padding: 20, background: "var(--bg-2)", border: "1px solid var(--amber-border)", boxShadow: "0 0 0 1px var(--amber-border), 0 16px 48px rgba(255, 180, 0, 0.15)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: "var(--amber-dim)", border: "1px solid var(--amber-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Shield size={16} color="var(--amber)" />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-display)" }}>Activate Bus Dashboard</h3>
+              <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{vehicle.plate_number} ({vehicle.device_id})</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", fontSize: 22, lineHeight: 1 }}>×</button>
+        </div>
+
+        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label className="label">Dashboard Password *</label>
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                style={{ paddingRight: 42 }}
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={8}
+                required
+                placeholder="At least 8 characters"
+              />
+              <button type="button" onClick={() => setShowPassword((current) => !current)} style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", display: "flex" }}>
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Confirm Password *</label>
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                style={{ paddingRight: 42 }}
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                minLength={8}
+                required
+                placeholder="Repeat password"
+              />
+              <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", display: "flex" }}>
+                {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 9, background: "var(--amber-dim)", border: "1px solid var(--amber-border)", color: "var(--amber)", fontSize: 12 }}>
+            <AlertCircle size={14} />
+            This password is used only to unlock this bus dashboard before driver login.
+          </div>
+
+          {error && <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, background: "var(--red-dim)", border: "1px solid var(--red-border)", color: "var(--red)", fontSize: 13 }}><AlertCircle size={13} />{error}</div>}
+
+          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+            <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+            <button type="submit" disabled={saving} className="btn-primary" style={{ flex: 1, justifyContent: "center" }}>
+              {saving ? <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.2)", borderTopColor: "#000", display: "inline-block", animation: "spin 0.8s linear infinite" }} /> : "Activate"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [assigningVehicle, setAssigningVehicle] = useState<Vehicle | null>(null);
+  const [configuringVehicle, setConfiguringVehicle] = useState<Vehicle | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -290,6 +422,11 @@ export default function VehiclesPage() {
   }), [vehicles]);
 
   const actions: TableAction<Vehicle>[] = [
+    {
+      label: "Activate Dashboard",
+      icon: <Shield size={13} />,
+      onClick: (row) => setConfiguringVehicle(row),
+    },
     {
       label: "Assign Route",
       icon: <MapPinned size={13} />,
@@ -354,6 +491,7 @@ export default function VehiclesPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {showAdd && <RegisterVehicleModal onClose={() => setShowAdd(false)} onSaved={load} />}
       {assigningVehicle && <VehicleModal vehicle={assigningVehicle} routes={routes} onClose={() => setAssigningVehicle(null)} onSaved={load} />}
+      {configuringVehicle && <BusDashboardActivationModal vehicle={configuringVehicle} onClose={() => setConfiguringVehicle(null)} onSaved={load} />}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>

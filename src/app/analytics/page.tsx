@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { dashboardApi } from "@/lib/api";
-import { ChartData, ETAAccuracy } from "@/types";
+import { ChartData, DashboardInsights, ETAAccuracy } from "@/types";
 import { PageLoader } from "@/components/ui/Spinner";
 import { AssignmentsChart, OccupancyChart, TelemetryChart, RouteUsageChart } from "@/components/charts/Charts";
 import { RefreshCw, Target, TrendingUp, BarChart3 } from "lucide-react";
@@ -14,6 +14,7 @@ export default function AnalyticsPage() {
   const [r7, setR7] = useState<ChartData | null>(null);
   const [r30, setR30] = useState<ChartData | null>(null);
   const [eta, setEta] = useState<ETAAccuracy | null>(null);
+  const [insights, setInsights] = useState<DashboardInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<7 | 14 | 30>(7);
 
@@ -23,7 +24,7 @@ export default function AnalyticsPage() {
       const res = await Promise.allSettled([
         dashboardApi.assignmentsOverTime(7), dashboardApi.assignmentsOverTime(30),
         dashboardApi.occupancyDistribution(), dashboardApi.telemetryVolume(),
-        dashboardApi.routeUsage(7), dashboardApi.routeUsage(30), dashboardApi.etaAccuracy(),
+        dashboardApi.routeUsage(7), dashboardApi.routeUsage(30), dashboardApi.etaAccuracy(), dashboardApi.insights(30),
       ]);
       if (res[0].status === "fulfilled") setA7(res[0].value.data);
       if (res[1].status === "fulfilled") setA30(res[1].value.data);
@@ -32,6 +33,7 @@ export default function AnalyticsPage() {
       if (res[4].status === "fulfilled") setR7(res[4].value.data);
       if (res[5].status === "fulfilled") setR30(res[5].value.data);
       if (res[6].status === "fulfilled") setEta(res[6].value.data);
+      if (res[7].status === "fulfilled") setInsights(res[7].value.data);
     } finally { setLoading(false); }
   }, []);
 
@@ -93,6 +95,20 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 12 }}>
+            <div style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Samples</p>
+              <p style={{ fontSize: 18, color: "var(--cyan)", fontWeight: 700, marginTop: 4 }}>{eta.sample_count ?? 0}</p>
+            </div>
+            <div style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>ML Win Rate</p>
+              <p style={{ fontSize: 18, color: "var(--green)", fontWeight: 700, marginTop: 4 }}>{eta.ml_win_rate ?? 0}%</p>
+            </div>
+            <div style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 11, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Comparable Rows</p>
+              <p style={{ fontSize: 18, color: "var(--purple)", fontWeight: 700, marginTop: 4 }}>{eta.comparable_count ?? 0}</p>
+            </div>
+          </div>
           {mlBetter && (
             <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "var(--green-dim)", border: "1px solid var(--green-border)", color: "var(--green)", fontSize: 13 }}>
               <TrendingUp size={14} />
@@ -117,6 +133,39 @@ export default function AnalyticsPage() {
           </div>
         ))}
       </div>
+
+      {insights && (
+        <div className="card">
+          <p className="section-title" style={{ marginBottom: 12 }}>Detailed Usage Insights (Last {insights.days} Days)</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ borderRadius: 10, padding: 12, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 6 }}>Most Used Route</p>
+              <p style={{ fontSize: 20, color: "var(--neon)", fontWeight: 700 }}>{insights.top_route?.route_number ?? "—"}</p>
+              <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 4 }}>{insights.top_route?.name ?? "No route name"}</p>
+              <p style={{ fontSize: 12, color: "var(--text-2)", marginTop: 6 }}>{insights.top_route?.trips ?? 0} trips</p>
+            </div>
+            <div style={{ borderRadius: 10, padding: 12, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 6 }}>Most Used Bus</p>
+              <p style={{ fontSize: 20, color: "var(--cyan)", fontWeight: 700 }}>{insights.top_vehicle?.plate_number ?? "—"}</p>
+              <p style={{ fontSize: 12, color: "var(--text-2)", marginTop: 6 }}>{insights.top_vehicle?.trips ?? 0} assignments</p>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, borderRadius: 10, padding: 12, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+            <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 8 }}>Most Active Times and Top Route by Hour</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              {insights.top_routes_by_hour.length === 0 ? (
+                <p style={{ fontSize: 12, color: "var(--text-3)" }}>No hourly assignment distribution yet.</p>
+              ) : insights.top_routes_by_hour.slice(0, 12).map((item) => (
+                <div key={`${item.hour}-${item.top_route_number}`} style={{ borderRadius: 8, padding: "8px 10px", border: "1px solid var(--border)", background: "var(--bg-4)" }}>
+                  <p style={{ fontSize: 11, color: "var(--text-4)" }}>{String(item.hour).padStart(2, "0")}:00</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{item.top_route_number}</p>
+                  <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{item.top_route_trips} trips</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         {assignments && <div className="card"><p className="section-title" style={{ marginBottom: 14 }}>Assignments — Last {period} Days</p><AssignmentsChart data={assignments} /></div>}

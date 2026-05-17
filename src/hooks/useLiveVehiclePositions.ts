@@ -28,6 +28,14 @@ function mergePosition(
       msg.route_id === null || msg.route_id === undefined
         ? null
         : Number(msg.route_id),
+    pixel_count:
+      msg.pixel_count === null || msg.pixel_count === undefined
+        ? null
+        : Number(msg.pixel_count),
+    density_level:
+      msg.density_level === null || msg.density_level === undefined
+        ? null
+        : Number(msg.density_level),
   };
   return { ...prev, [key]: next };
 }
