@@ -37,12 +37,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(t);
     const me = await authApi.me();
     setUser(me.data);
+    // Store role in cookie so middleware can check it without decoding JWT
+    document.cookie = `user_role=${me.data.role}; path=/; max-age=86400; SameSite=Lax`;
   };
 
   const logout = () => {
     localStorage.removeItem("token");
-    // Clear auth cookie
+    // Clear auth and role cookies
     document.cookie = "auth_token=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "user_role=; path=/; max-age=0; SameSite=Lax";
     setToken(null); setUser(null);
     window.location.href = "/login";
   };

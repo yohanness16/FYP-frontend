@@ -13,18 +13,21 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (!loading && user) router.replace("/dashboard"); }, [user, loading, router]);
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "driver") {
+        router.replace("/bus-dashboard");
+      } else {
+        router.replace("/dashboard");
+      }
+    }
+  }, [user, loading, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(""); setBusy(true);
     try {
       await login(username, password);
-      // Set cookie for middleware auth check
-      const token = localStorage.getItem("token");
-      if (token) {
-        document.cookie = `auth_token=${token}; path=/; max-age=86400; SameSite=Lax`;
-      }
-      router.replace("/dashboard");
+      // Redirect based on role (handled by useEffect above)
     }
     catch (err: unknown) { setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Invalid credentials"); }
     finally { setBusy(false); }

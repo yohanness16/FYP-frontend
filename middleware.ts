@@ -20,6 +20,22 @@ const ASSET_PREFIXES = [
   "/favicon.ico",
 ];
 
+/**
+ * Admin-only route prefixes. Only users with role "admin" can access these.
+ * Non-admin authenticated users (e.g. drivers) are redirected to /bus-dashboard.
+ */
+const ADMIN_ROUTES = [
+  "/dashboard",
+  "/analytics",
+  "/map",
+  "/vehicles",
+  "/routes",
+  "/assignments",
+  "/users",
+  "/settings",
+  "/admin",
+];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -44,6 +60,19 @@ export function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Check if the requested route is admin-only
+  const isAdminRoute = ADMIN_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
+  );
+
+  if (isAdminRoute) {
+    const userRole = request.cookies.get("user_role")?.value;
+    // Only admins can access admin routes
+    if (userRole !== "admin") {
+      return NextResponse.redirect(new URL("/bus-dashboard", request.url));
+    }
   }
 
   return NextResponse.next();
