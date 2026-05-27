@@ -96,19 +96,19 @@ export const usersApi = {
     email: string;
     password: string;
     role: "driver" | "admin";
-  }) => api.post("/create", data),
+  }) => api.post("/admin/users/create", data),
   update: (userId: number, data: {
     username: string;
     email: string;
     password?: string | null;
     role: "driver" | "admin";
-  }) => api.put(`/update/${userId}`, data),
-  me: () => api.get("/me"),
-  search: (query: string) => api.get(`/search?query=${encodeURIComponent(query)}`),
-  listAdmins: () => api.get("/admins"),
-  listDrivers: () => api.get("/drivers"),
-  listAll: () => api.get("/list"),
-  delete: (userId: number) => api.delete(`/delete/${userId}`),
+  }) => api.put(`/admin/users/update/${userId}`, data),
+  me: () => api.get("/admin/users/me"),
+  search: (query: string) => api.get(`/admin/users/search?query=${encodeURIComponent(query)}`),
+  listAdmins: () => api.get("/admin/users/admins"),
+  listDrivers: () => api.get("/admin/users/drivers"),
+  listAll: () => api.get("/admin/users/list"),
+  delete: (userId: number) => api.delete(`/admin/users/delete/${userId}`),
 };
 
 export const adminApi = {
