@@ -1,198 +1,198 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { assignmentsApi, vehiclesApi, routesApi, usersApi } from '@/lib/api';
+import { Vehicle, Route, Assignment } from '@/types';
+import { PageLoader } from '@/components/ui/Spinner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, Bus, MapPin, Plus, Trash2 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { Vehicle, Route } from '@/types';
-
-interface FormData {
-  vehicle_id: number;
-  route_id: number;
-}
+import { Badge } from '@/components/ui/badge';
+import { Truck, Bus, MapPin, Play, Square, RefreshCw, Users, Clock, AlertCircle } from 'lucide-react';
 
 export default function AssignmentsPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [activeAssignments, setActiveAssignments] = useState<Assignment[]>([]);
+  const [drivers, setDrivers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentAssignments, setCurrentAssignments] = useState<Record<number, number>>({});
+  const [starting, setStarting] = useState(false);
+  const [formData, setFormData] = useState({ driver_id: 0, vehicle_id: 0, route_id: 0 });
 
-  const [formData, setFormData] = useState<FormData>({
-    vehicle_id: 0,
-    route_id: 0,
-  });
-
-  const loadAllData = useCallback(async () => {
+  const loadAll = useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const [vRes, rRes] = await Promise.allSettled([
-        api.get('/vehicles'),
-        api.get('/routes'),
+      const results = await Promise.allSettled([
+        vehiclesApi.list(0, 200),
+        routesApi.list(0, 200),
+        assignmentsApi.listActive(),
+        usersApi.listDrivers(),
       ]);
-
-      if (vRes.status === 'fulfilled') {
-        setVehicles(vRes.value.data);
-        setCurrentAssignments(() => {
-          const initial: Record<number, number> = {};
-          vRes.value.data.forEach((v: Vehicle) => {
-            initial[v.id] = v.route_id || 0;
-          });
-          return initial;
-        });
-      }
-      if (rRes.status === 'fulfilled') setRoutes(rRes.value.data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      if (results[0].status === 'fulfilled') setVehicles(Array.isArray(results[0].value.data) ? results[0].value.data : []);
+      if (results[1].status === 'fulfilled') setRoutes(Array.isArray(results[1].value.data) ? results[1].value.data : []);
+      if (results[2].status === 'fulfilled') setActiveAssignments(Array.isArray(results[2].value.data) ? results[2].value.data : []);
+      if (results[3].status === 'fulfilled') setDrivers(Array.isArray(results[3].value.data) ? results[3].value.data : []);
+    } catch (err: any) { setError(err.message); }
+    finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    loadAllData();
-  }, [loadAllData]);
+  useEffect(() => { loadAll(); }, [loadAll]);
 
-  const handleAssign = async (e: React.FormEvent) => {
+  const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.put(`/vehicles/${formData.vehicle_id}`, { route_id: formData.route_id });
-      loadAllData();
-    } catch (err: any) {
-      setError(err.message);
-    }
+    if (!formData.driver_id || !formData.vehicle_id || !formData.route_id) { setError("Please select driver, vehicle, and route"); return; }
+    setStarting(true); setError(null);
+    try { await assignmentsApi.start(formData.driver_id, formData.vehicle_id, formData.route_id); setFormData({ driver_id: 0, vehicle_id: 0, route_id: 0 }); await loadAll(); }
+    catch (err: any) { setError(err.response?.data?.detail || err.message); }
+    finally { setStarting(false); }
   };
 
-  const handleUnassign = async (vehicleId: number) => {
-    if (!confirm('Unassign this vehicle from its route?')) return;
-    try {
-      await api.put(`/vehicles/${vehicleId}`, { route_id: null });
-      loadAllData();
-    } catch (err: any) {
-      setError(err.message);
-    }
+  const handleEnd = async (assignmentId: number) => {
+    if (!confirm('End this assignment?')) return;
+    try { await assignmentsApi.end(assignmentId); await loadAll(); }
+    catch (err: any) { setError(err.response?.data?.detail || err.message); }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+  if (loading) return <PageLoader />;
+
+  const assignedVehicleIds = new Set(activeAssignments.map(a => a.vehicle_id));
+  const unassignedVehicles = vehicles.filter(v => !assignedVehicleIds.has(v.id));
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Active Operations</h1>
-          <p className="text-muted-foreground">Assign and manage vehicle-route operations</p>
+          <h2 className="text-xl font-bold text-foreground font-display">Live Trips</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Manage active driver-vehicle-route assignments</p>
         </div>
-        <Button asChild>
-          <a href="/routes/routes">
-            <Plus className="mr-2 h-4 w-4" /> Manage Routes
-          </a>
-        </Button>
+        <button onClick={loadAll} className="btn-secondary"><RefreshCw size={14} />Refresh</button>
       </div>
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" /> Assign Vehicles to Routes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAssign} className="flex gap-4">
-              <Select
-                value={formData.vehicle_id}
-                onChange={(v: string) => setFormData({ ...formData, vehicle_id: parseInt(v) })}
-                placeholder="Select vehicle"
-                className="flex-1"
-              >
-                {vehicles
-                  .filter(v => v.route_id === null)
-                  .map(v => (
-                    <option key={v.id} value={v.id}>
-                      {v.plate_number} ({v.bus_type}) - {v.device_id}
-                    </option>
-                  ))}
-              </Select>
-              <Select
-                value={formData.route_id}
-                onChange={(v: string) => setFormData({ ...formData, route_id: parseInt(v) })}
-                placeholder="Select route"
-                className="flex-1"
-              >
-                {routes.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.route_number} - {r.name}
-                  </option>
-                ))}
-              </Select>
-              <Button type="submit">Assign</Button>
-            </form>
+      {error && (
+        <Card className="border-destructive/30 bg-destructive/10">
+          <CardContent className="flex items-center gap-2 pt-3 pb-3 text-sm text-destructive">
+            <AlertCircle size={15} />{error}
           </CardContent>
         </Card>
+      )}
 
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bus className="h-5 w-5" /> Current Assignments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              {vehicles.map((v) => (
-                <Card key={v.id} className="p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-orange-100 rounded">
-                        <Bus className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {v.plate_number} <span className="text-sm text-muted-foreground">({v.bus_type})</span>
-                        </p>
-                        <p className="text-sm text-muted-foreground">{v.device_id}</p>
-                      </div>
-                    </div>
-                    {v.route ? (
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-green-600" />
-                          Route {v.route.route_number}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500"
-                          onClick={() => handleUnassign(v.id)}
-                        >
-                          <Trash2 className="h-4 w-4" /> Unassign
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button variant="outline" size="sm">Not Assigned</Button>
-                    )}
-                  </div>
-                </Card>
-              ))}
-              {vehicles.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No vehicles registered</p>
-              )}
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center dark:bg-emerald-950/30 dark:border-emerald-800">
+              <Play size={18} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold font-display text-emerald-600 dark:text-emerald-400">{activeAssignments.length}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Active Trips</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Truck size={18} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold font-display text-primary">{unassignedVehicles.length}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Available Vehicles</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center dark:bg-amber-950/30 dark:border-amber-800">
+              <Users size={18} className="text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold font-display text-amber-600 dark:text-amber-400">{drivers.length}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Drivers</p>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-}
 
-function Select({ children, value, onChange, placeholder, className }: any) {
-  return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className={`px-3 py-2 border rounded-md ${className || ''}`}
-    >
-      <option value="" disabled>{placeholder}</option>
-      {children}
-    </select>
+      {/* Start Assignment Form */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2"><Play size={15} className="text-emerald-500" />Start New Assignment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleStart} className="flex flex-wrap gap-3 items-end">
+            <div className="min-w-[180px] flex-1">
+              <label className="label">Driver</label>
+              <select className="input" value={formData.driver_id} onChange={(e) => setFormData({ ...formData, driver_id: Number(e.target.value) })}>
+                <option value={0}>Select driver…</option>
+                {drivers.map(d => (<option key={d.id} value={d.id}>{d.username} ({d.email})</option>))}
+              </select>
+            </div>
+            <div className="min-w-[180px] flex-1">
+              <label className="label">Vehicle</label>
+              <select className="input" value={formData.vehicle_id} onChange={(e) => setFormData({ ...formData, vehicle_id: Number(e.target.value) })}>
+                <option value={0}>Select vehicle…</option>
+                {unassignedVehicles.map(v => (<option key={v.id} value={v.id}>{v.plate_number} ({v.bus_type || "—"})</option>))}
+              </select>
+            </div>
+            <div className="min-w-[180px] flex-1">
+              <label className="label">Route</label>
+              <select className="input" value={formData.route_id} onChange={(e) => setFormData({ ...formData, route_id: Number(e.target.value) })}>
+                <option value={0}>Select route…</option>
+                {routes.map(r => (<option key={r.id} value={r.id}>{r.route_number} — {r.name || r.origin || "Route"}</option>))}
+              </select>
+            </div>
+            <Button type="submit" disabled={starting} className="btn-primary h-9">
+              {starting ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white inline-block animate-spin" /> : <><Play size={13} />Start</>}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Active Assignments */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2"><Clock size={15} className="text-primary" />Active Assignments ({activeAssignments.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {activeAssignments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Bus size={32} className="mx-auto mb-3 opacity-40" />
+              <p className="font-medium">No active assignments</p>
+              <p className="text-xs mt-1">Start a new assignment using the form above.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {activeAssignments.map((a) => (
+                <Card key={a.id} className="border-border/60">
+                  <CardContent className="pt-3 pb-3">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                          <Bus size={18} className="text-primary" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm">{a.vehicle_plate || `Vehicle #${a.vehicle_id}`}</span>
+                            <Badge variant="outline" className="text-emerald-600 border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">Active</Badge>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1"><Users size={10} />{a.driver_username || `Driver #${a.driver_id}`}</span>
+                            <span className="flex items-center gap-1"><MapPin size={10} />{a.route_number || `Route #${a.route_id}`}</span>
+                            <span className="flex items-center gap-1"><Clock size={10} />{new Date(a.start_time).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleEnd(a.id)}>
+                        <Square size={13} />End Trip
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

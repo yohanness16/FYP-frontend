@@ -2,11 +2,11 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
 import { ChartData } from "@/types";
 
-const tt = (color: string) => ({ contentStyle: { background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }, itemStyle: { color }, labelStyle: { color: "var(--text-2)" } });
-const ASSIGNMENT_STROKE = "#3fc4ff";
-const TELEMETRY_BAR = "#20d6c7";
-const OCC_COLORS = ["#3fc4ff", "#22d3a8", "#f2b341", "#f56f7f"];
-const ROUTE_COLORS = ["#3fc4ff", "#20d6c7", "#63e38d", "#f2b341", "#f56f7f", "#9a8dff"];
+const tt = (color: string) => ({ contentStyle: { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, boxShadow: "var(--shadow)" }, itemStyle: { color }, labelStyle: { color: "var(--text-2)" } });
+const ASSIGNMENT_STROKE = "#2563eb";
+const TELEMETRY_BAR = "#0ea5e9";
+const OCC_COLORS = ["#2563eb", "#0ea5e9", "#8b5cf6", "#f59e0b"];
+const ROUTE_COLORS = ["#2563eb", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export function AssignmentsChart({ data }: { data: ChartData }) {
   const d = data.labels.map((l, i) => ({ date: l.slice(5), value: data.data[i] }));

@@ -6,246 +6,76 @@ import { usersApi } from "@/lib/api";
 import { User } from "@/types";
 import { DataTable, ColDef, TableAction } from "@/components/ui/DataTable";
 import { PageLoader } from "@/components/ui/Spinner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  AlertCircle,
-  Eye,
-  EyeOff,
-  PencilLine,
-  Plus,
-  RefreshCw,
-  Shield,
-  Trash2,
-  Truck,
-  UserCircle2,
-  Users,
+  AlertCircle, Eye, EyeOff, PencilLine, Plus, RefreshCw, Shield, Trash2, Truck, Users, UserCircle2,
 } from "lucide-react";
 
 const ROLE_META: Record<string, { label: string; color: string; bg: string; border: string; icon: JSX.Element }> = {
-  passenger: {
-    label: "Passenger",
-    color: "var(--text-2)",
-    bg: "var(--bg-3)",
-    border: "var(--border)",
-    icon: <Users size={10} />,
-  },
-  driver: {
-    label: "Driver",
-    color: "var(--amber)",
-    bg: "var(--amber-dim)",
-    border: "var(--amber-border)",
-    icon: <Truck size={10} />,
-  },
-  admin: {
-    label: "Admin",
-    color: "var(--neon)",
-    bg: "var(--neon-dim)",
-    border: "var(--neon-border)",
-    icon: <Shield size={10} />,
-  },
+  passenger: { label: "Passenger", color: "var(--text-2)", bg: "var(--bg-3)", border: "var(--border)", icon: <Users size={10} /> },
+  driver: { label: "Driver", color: "var(--warning)", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)", icon: <Truck size={10} /> },
+  admin: { label: "Admin", color: "var(--neon)", bg: "rgba(37,99,235,0.1)", border: "rgba(37,99,235,0.25)", icon: <Shield size={10} /> },
 };
 
-type UserForm = {
-  username: string;
-  email: string;
-  password: string;
-  role: "driver" | "admin";
-};
+type UserForm = { username: string; email: string; password: string; role: "driver" | "admin" };
 
-function UserModal({
-  mode,
-  initialValue,
-  onClose,
-  onSaved,
-}: {
-  mode: "create" | "edit";
-  initialValue?: User | null;
-  onClose: () => void;
-  onSaved: (user: User) => void;
-}) {
-  const [form, setForm] = useState<UserForm>({
-    username: initialValue?.username ?? "",
-    email: initialValue?.email ?? "",
-    password: "",
-    role: (initialValue?.role === "admin" ? "admin" : "driver") as "driver" | "admin",
-  });
+function UserModal({ mode, initialValue, onClose, onSaved }: { mode: "create" | "edit"; initialValue?: User | null; onClose: () => void; onSaved: (user: User) => void }) {
+  const [form, setForm] = useState<UserForm>({ username: initialValue?.username ?? "", email: initialValue?.email ?? "", password: "", role: (initialValue?.role === "admin" ? "admin" : "driver") as "driver" | "admin" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    setForm({
-      username: initialValue?.username ?? "",
-      email: initialValue?.email ?? "",
-      password: "",
-      role: (initialValue?.role === "admin" ? "admin" : "driver") as "driver" | "admin",
-    });
-  }, [initialValue]);
+  useEffect(() => { setForm({ username: initialValue?.username ?? "", email: initialValue?.email ?? "", password: "", role: (initialValue?.role === "admin" ? "admin" : "driver") as "driver" | "admin" }); }, [initialValue]);
 
   const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    setError("");
+    event.preventDefault(); setSaving(true); setError("");
     try {
-      const payload = {
-        username: form.username.trim(),
-        email: form.email.trim(),
-        role: form.role,
-        ...(form.password.trim() ? { password: form.password.trim() } : {}),
-      };
-
-      const response =
-        mode === "create"
-          ? await usersApi.createAdmin({
-              username: payload.username,
-              email: payload.email,
-              password: form.password.trim(),
-              role: payload.role,
-            })
-          : await usersApi.update(initialValue!.id, payload);
-
-      onSaved(response.data);
-      onClose();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-          "Failed to save user"
-      );
-    } finally {
-      setSaving(false);
-    }
+      const payload = { username: form.username.trim(), email: form.email.trim(), role: form.role, ...(form.password.trim() ? { password: form.password.trim() } : {}) };
+      const response = mode === "create"
+        ? await usersApi.createAdmin({ username: payload.username, email: payload.email, password: form.password.trim(), role: payload.role })
+        : await usersApi.update(initialValue!.id, payload);
+      onSaved(response.data); onClose();
+    } catch (err: unknown) { setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to save user"); }
+    finally { setSaving(false); }
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "rgba(0,0,0,0.72)",
-        backdropFilter: "blur(8px)",
-        padding: 16,
-      }}
-    >
-      <div
-        className="anim-up"
-        style={{
-          width: "100%",
-          maxWidth: 460,
-          borderRadius: 18,
-          padding: 20,
-          background: "var(--bg-2)",
-          border: "1px solid var(--neon-border)",
-          boxShadow: "var(--shadow-neon)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: "var(--neon-dim)", border: "1px solid var(--neon-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Users size={16} color="var(--neon)" />
-            </div>
+    <div className="modal-overlay">
+      <div className="anim-up modal-box" style={{ maxWidth: 460 }}>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center"><Users size={16} className="text-primary" /></div>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-display)" }}>
-                {mode === "create" ? "Create Driver / Admin" : `Edit ${initialValue?.username ?? "User"}`}
-              </h3>
-              <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
-                {mode === "create" ? "Provision a backend-managed account." : "Update account details via /admin/users/update."}
-              </p>
+              <h3 className="text-sm font-bold text-foreground font-display">{mode === "create" ? "Create Driver / Admin" : `Edit ${initialValue?.username ?? "User"}`}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{mode === "create" ? "Provision a backend-managed account." : "Update account details via /admin/users/update."}</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", fontSize: 22, lineHeight: 1 }}>×</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
         </div>
-
-        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div>
-            <label className="label">Username *</label>
-            <input
-              className="input"
-              value={form.username}
-              onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
-              required
-              minLength={3}
-              placeholder="driver_abebe"
-            />
-          </div>
-          <div>
-            <label className="label">Email *</label>
-            <input
-              className="input"
-              type="email"
-              value={form.email}
-              onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-              required
-              placeholder="user@bustrack.et"
-            />
-          </div>
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <div><label className="label">Username *</label><input className="input" value={form.username} onChange={(e) => setForm((c) => ({ ...c, username: e.target.value }))} required minLength={3} placeholder="driver_abebe" /></div>
+          <div><label className="label">Email *</label><input className="input" type="email" value={form.email} onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))} required placeholder="user@bustrack.et" /></div>
           <div>
             <label className="label">Password {mode === "edit" ? "(optional)" : "*"}</label>
-            <div style={{ position: "relative" }}>
-              <input
-                className="input"
-                style={{ paddingRight: 42 }}
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                required={mode === "create"}
-                minLength={mode === "create" ? 8 : undefined}
-                placeholder={mode === "create" ? "Min. 8 characters" : "Leave blank to keep current password"}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", display: "flex" }}
-              >
-                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
+            <div className="relative">
+              <input className="input pr-10" type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm((c) => ({ ...c, password: e.target.value }))} required={mode === "create"} minLength={mode === "create" ? 8 : undefined} placeholder={mode === "create" ? "Min. 8 characters" : "Leave blank to keep current password"} />
+              <button type="button" onClick={() => setShowPassword((c) => !c)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPassword ? <EyeOff size={14} /> : <Eye size={14} />}</button>
             </div>
           </div>
           <div>
             <label className="label">Role</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, borderRadius: 10, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
+            <div className="grid grid-cols-2 gap-2 p-1.5 rounded-lg bg-muted border border-border">
               {(["driver", "admin"] as const).map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => setForm((current) => ({ ...current, role }))}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    padding: "10px 12px",
-                    border: "none",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    background: form.role === role ? "var(--neon)" : "transparent",
-                    color: form.role === role ? "#03110d" : "var(--text-2)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {role === "driver" ? <Truck size={13} /> : <Shield size={13} />}
-                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                <button key={role} type="button" onClick={() => setForm((c) => ({ ...c, role }))} className={`flex items-center justify-center gap-2 py-2.5 rounded-md font-semibold transition-all ${form.role === role ? "bg-primary text-primary-foreground" : "text-foreground/60 hover:text-foreground"}`}>
+                  {role === "driver" ? <Truck size={13} /> : <Shield size={13} />}{role.charAt(0).toUpperCase() + role.slice(1)}
                 </button>
               ))}
             </div>
           </div>
-
-          {error && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 9, background: "var(--red-dim)", border: "1px solid var(--red-border)", color: "var(--red)", fontSize: 13 }}>
-              <AlertCircle size={14} />
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-            <button type="button" onClick={onClose} className="btn-secondary" style={{ flex: 1, justifyContent: "center" }}>
-              Cancel
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary" style={{ flex: 1, justifyContent: "center" }}>
-              {saving ? <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(0,0,0,0.2)", borderTopColor: "#000", display: "inline-block", animation: "spin 0.8s linear infinite" }} /> : mode === "create" ? "Create User" : "Save Changes"}
-            </button>
+          {error && <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"><AlertCircle size={14} />{error}</div>}
+          <div className="flex gap-2 mt-1">
+            <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
+            <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white inline-block animate-spin" /> : mode === "create" ? "Create User" : "Save Changes"}</button>
           </div>
         </form>
       </div>
@@ -267,215 +97,122 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const [driversRes, adminsRes] = await Promise.all([usersApi.listDrivers(), usersApi.listAdmins()]);
-      const driverUsers = (Array.isArray(driversRes.data) ? driversRes.data : []).map((entry: User) => ({ ...entry, role: "driver" as const }));
-      const adminUsers = (Array.isArray(adminsRes.data) ? adminsRes.data : []).map((entry: User) => ({ ...entry, role: "admin" as const }));
+      const driverUsers = (Array.isArray(driversRes.data) ? driversRes.data : []).map((d: User) => ({ ...d, role: "driver" as const }));
+      const adminUsers = (Array.isArray(adminsRes.data) ? adminsRes.data : []).map((a: User) => ({ ...a, role: "admin" as const }));
       setUsers([...adminUsers, ...driverUsers]);
-    } catch (error) {
-      console.error("Failed to load users:", error);
-      setUsers([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } catch (error) { console.error("Failed to load users:", error); setUsers([]); }
+    finally { setLoading(false); setRefreshing(false); }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((entry) => filterRole === "all" || entry.role === filterRole);
-  }, [users, filterRole]);
+  const filteredUsers = useMemo(() => users.filter((u) => filterRole === "all" || u.role === filterRole), [users, filterRole]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this account?")) return;
     setDeletingId(id);
-    try {
-      await usersApi.delete(id);
-      setUsers((current) => current.filter((entry) => entry.id !== id));
-    } catch (error) {
-      console.error("Failed to delete user:", error);
-    } finally {
-      setDeletingId(null);
-    }
+    try { await usersApi.delete(id); setUsers((c) => c.filter((u) => u.id !== id)); }
+    catch (error) { console.error("Failed to delete user:", error); }
+    finally { setDeletingId(null); }
   };
 
   const actions: TableAction<User>[] = [
-    {
-      label: "Edit",
-      icon: <PencilLine size={13} />,
-      onClick: (row) => {
-        setEditingUser(row);
-        setShowModal(true);
-      },
-    },
-    {
-      label: "Delete",
-      icon: <Trash2 size={13} />,
-      danger: true,
-      onClick: (row) => void handleDelete(row.id),
-    },
+    { label: "Edit", icon: <PencilLine size={13} />, onClick: (row) => { setEditingUser(row); setShowModal(true); } },
+    { label: "Delete", icon: <Trash2 size={13} />, danger: true, onClick: (row) => void handleDelete(row.id) },
   ];
 
   const columns: ColDef<User>[] = [
     {
-      key: "username",
-      label: "User",
-      render: (entry) => {
-        const meta = ROLE_META[entry.role] ?? ROLE_META.passenger;
+      key: "username", label: "User",
+      render: (u) => {
+        const meta = ROLE_META[u.role] ?? ROLE_META.passenger;
         return (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: meta.bg, border: `1px solid ${meta.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: meta.color, flexShrink: 0, fontWeight: 700, fontFamily: "var(--font-display)" }}>
-              {entry.username.slice(0, 1).toUpperCase()}
-            </div>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm font-display" style={{ background: meta.bg, border: `1px solid ${meta.border}`, color: meta.color }}>{u.username.slice(0, 1).toUpperCase()}</div>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text)" }}>{entry.username}</span>
-                <span className="badge" style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>
-                  {meta.icon}
-                  {meta.label}
-                </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">{u.username}</span>
+                <span className="badge" style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>{meta.icon}{meta.label}</span>
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{entry.email}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{u.email}</div>
             </div>
           </div>
         );
       },
     },
-    {
-      key: "role",
-      label: "Role",
-      align: "center",
-      render: (entry) => {
-        const meta = ROLE_META[entry.role] ?? ROLE_META.passenger;
-        return <span className="badge" style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>{meta.icon}{meta.label}</span>;
-      },
-    },
-    {
-      key: "created_at",
-      label: "Created",
-      render: (entry) => (
-        <span style={{ fontSize: 12.5, color: "var(--text-3)" }}>
-          {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-        </span>
-      ),
-    },
-    {
-      key: "id",
-      label: "ID",
-      align: "right",
-      render: (entry) => <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-4)" }}>#{entry.id}</span>,
-    },
+    { key: "role", label: "Role", align: "center", render: (u) => { const meta = ROLE_META[u.role] ?? ROLE_META.passenger; return <span className="badge" style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>{meta.icon}{meta.label}</span>; } },
+    { key: "created_at", label: "Created", render: (u) => <span className="text-sm text-muted-foreground">{new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span> },
+    { key: "id", label: "ID", align: "right", render: (u) => <span className="font-mono text-xs text-muted-foreground">#{u.id}</span> },
   ];
 
-  const roleCounts = {
-    passenger: users.filter((entry) => entry.role === "passenger").length,
-    driver: users.filter((entry) => entry.role === "driver").length,
-    admin: users.filter((entry) => entry.role === "admin").length,
-  };
+  const roleCounts = { passenger: users.filter((u) => u.role === "passenger").length, driver: users.filter((u) => u.role === "driver").length, admin: users.filter((u) => u.role === "admin").length };
 
   if (loading) return <PageLoader />;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {showModal && (
-        <UserModal
-          mode={editingUser ? "edit" : "create"}
-          initialValue={editingUser}
-          onClose={() => {
-            setShowModal(false);
-            setEditingUser(null);
-          }}
-          onSaved={() => {
-            setShowModal(false);
-            setEditingUser(null);
-            setRefreshing(true);
-            void load();
-          }}
-        />
-      )}
+    <div className="flex flex-col gap-5">
+      {showModal && <UserModal mode={editingUser ? "edit" : "create"} initialValue={editingUser} onClose={() => { setShowModal(false); setEditingUser(null); }} onSaved={() => { setShowModal(false); setEditingUser(null); setRefreshing(true); void load(); }} />}
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>Users</h2>
-          <p style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 2 }}>Backend-managed fleet accounts and admin identities</p>
+          <h2 className="text-xl font-bold text-foreground font-display">Users</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Backend-managed fleet accounts and admin identities</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => { setRefreshing(true); void load(); }} className="btn-secondary" disabled={refreshing}>
-            <RefreshCw size={14} style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none" }} />
-            Refresh
-          </button>
-          <button onClick={() => { setEditingUser(null); setShowModal(true); }} className="btn-primary">
-            <Plus size={14} />Create Driver / Admin
-          </button>
+        <div className="flex gap-2">
+          <button onClick={() => { setRefreshing(true); void load(); }} className="btn-secondary" disabled={refreshing}><RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />Refresh</button>
+          <button onClick={() => { setEditingUser(null); setShowModal(true); }} className="btn-primary"><Plus size={14} />Create Driver / Admin</button>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          { label: "Total Users", val: users.length, color: "var(--text)", icon: <Users size={15} /> },
-          { label: "Drivers", val: roleCounts.driver, color: "var(--amber)", icon: <Truck size={15} /> },
-          { label: "Admins", val: roleCounts.admin, color: "var(--neon)", icon: <Shield size={15} /> },
-          { label: "Passengers", val: roleCounts.passenger, color: "var(--cyan)", icon: <UserCircle2 size={15} /> },
-        ].map((entry) => (
-          <div key={entry.label} className="card-sm" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 11, color: "var(--text-3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>{entry.label}</span>
-              <span style={{ color: entry.color }}>{entry.icon}</span>
-            </div>
-            <p style={{ fontSize: 26, fontWeight: 700, color: entry.color, fontFamily: "var(--font-display)", lineHeight: 1 }}>{entry.val}</p>
-          </div>
+          { label: "Total Users", val: users.length, color: "text-foreground", icon: <Users size={15} /> },
+          { label: "Drivers", val: roleCounts.driver, color: "text-amber-500", icon: <Truck size={15} /> },
+          { label: "Admins", val: roleCounts.admin, color: "text-primary", icon: <Shield size={15} /> },
+          { label: "Passengers", val: roleCounts.passenger, color: "text-sky-500", icon: <UserCircle2 size={15} /> },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{s.label}</span>
+                <span className={s.color}>{s.icon}</span>
+              </div>
+              <p className={`text-2xl font-bold font-display ${s.color}`}>{s.val}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {user && (
-        <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: "var(--neon-dim)", border: "1px solid var(--neon-border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--neon)", fontWeight: 800, fontFamily: "var(--font-display)" }}>
-              {user.username.slice(0, 1).toUpperCase()}
+        <Card>
+          <CardContent className="pt-4 pb-4 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-extrabold font-display">{user.username.slice(0, 1).toUpperCase()}</div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Signed in as {user.username}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{user.email} · {ROLE_META[user.role]?.label ?? user.role}</p>
+              </div>
             </div>
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Signed in as {user.username}</p>
-              <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{user.email} · {ROLE_META[user.role]?.label ?? user.role}</p>
-            </div>
-          </div>
-          <div style={{ fontSize: 12, color: "var(--text-3)" }}>Manage driver and admin accounts through the backend.</div>
-        </div>
+            <p className="text-xs text-muted-foreground">Manage driver and admin accounts through the backend.</p>
+          </CardContent>
+        </Card>
       )}
 
-      <div style={{ display: "flex", gap: 3, padding: 3, background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: 10, width: "fit-content", flexWrap: "wrap" }}>
+      <div className="flex gap-1 p-1 bg-muted border border-border rounded-lg w-fit flex-wrap">
         {(["all", "driver", "admin", "passenger"] as const).map((role) => (
-          <button
-            key={role}
-            onClick={() => setFilterRole(role)}
-            style={{ padding: "5px 14px", borderRadius: 7, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s", background: filterRole === role ? "var(--neon)" : "transparent", color: filterRole === role ? "#000" : "var(--text-2)" }}
-          >
-            {role}{role !== "all" && ` (${roleCounts[role]})`}
-          </button>
+          <button key={role} onClick={() => setFilterRole(role)} className={`px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-all ${filterRole === role ? "bg-primary text-primary-foreground" : "text-foreground/60 hover:text-foreground"}`}>{role}{role !== "all" && ` (${roleCounts[role]})`}</button>
         ))}
       </div>
 
       {filteredUsers.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--bg-2)", border: "2px dashed var(--border)", borderRadius: 12 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--neon-dim)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", border: "1px solid var(--neon-border)" }}>
-            <Users size={22} color="var(--neon)" />
-          </div>
-          <p style={{ fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>No {filterRole === "all" ? "users" : filterRole + "s"} yet</p>
-          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 18 }}>Create driver and admin accounts to manage your fleet.</p>
-          <button onClick={() => { setEditingUser(null); setShowModal(true); }} className="btn-primary" style={{ margin: "0 auto" }}>
-            <Plus size={14} />Create User
-          </button>
+        <div className="text-center py-16 bg-card border-2 border-dashed border-border rounded-xl">
+          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4 border border-primary/20"><Users size={22} className="text-primary" /></div>
+          <p className="font-semibold text-foreground mb-1">No {filterRole === "all" ? "users" : filterRole + "s"} yet</p>
+          <p className="text-sm text-muted-foreground mb-5">Create driver and admin accounts to manage your fleet.</p>
+          <button onClick={() => { setEditingUser(null); setShowModal(true); }} className="btn-primary mx-auto"><Plus size={14} />Create User</button>
         </div>
       ) : (
-        <DataTable<User>
-          data={filteredUsers}
-          columns={columns}
-          actions={actions}
-          searchPlaceholder="Search by username, email, or role…"
-          searchKeys={["username", "email", "role"]}
-          emptyMessage="No users match your search"
-          pageSize={10}
-        />
+        <DataTable<User> data={filteredUsers} columns={columns} actions={actions} searchPlaceholder="Search by username, email, or role…" searchKeys={["username", "email", "role"]} emptyMessage="No users match your search" pageSize={10} />
       )}
     </div>
   );

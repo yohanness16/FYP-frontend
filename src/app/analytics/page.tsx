@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { dashboardApi } from "@/lib/api";
 import { ChartData, DashboardInsights, ETAAccuracy } from "@/types";
 import { PageLoader } from "@/components/ui/Spinner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AssignmentsChart, OccupancyChart, TelemetryChart, RouteUsageChart } from "@/components/charts/Charts";
 import { RefreshCw, Target, TrendingUp, BarChart3 } from "lucide-react";
 
@@ -46,19 +47,16 @@ export default function AnalyticsPage() {
   const mlBetter = eta && eta.ml_mae < eta.heuristic_mae;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>Analytics</h2>
-          <p style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 2 }}>System performance & fleet insights</p>
+          <h2 className="text-xl font-bold text-foreground font-display">Analytics</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">System performance & fleet insights</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <div style={{ display: "flex", gap: 2, padding: 3, background: "var(--bg-3)", border: "1px solid var(--border)", borderRadius: 10 }}>
+        <div className="flex gap-2">
+          <div className="flex gap-1 p-1 bg-muted border border-border rounded-lg">
             {([7, 14, 30] as const).map(d => (
-              <button key={d} onClick={() => setPeriod(d)}
-                style={{ padding: "5px 12px", borderRadius: 7, fontSize: 12, fontWeight: 500, border: "none", cursor: "pointer", transition: "all 0.15s", background: period === d ? "var(--neon)" : "transparent", color: period === d ? "#000" : "var(--text-2)" }}>
-                {d}d
-              </button>
+              <button key={d} onClick={() => setPeriod(d)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${period === d ? "bg-primary text-primary-foreground" : "text-foreground/60 hover:text-foreground"}`}>{d}d</button>
             ))}
           </div>
           <button onClick={load} className="btn-secondary"><RefreshCw size={14} /></button>
@@ -67,111 +65,111 @@ export default function AnalyticsPage() {
 
       {/* ETA comparison */}
       {eta && (
-        <div className="card">
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <Target size={15} color="var(--neon)" />
-            <span className="section-title">ETA Model Comparison</span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {[
-              { label: "Heuristic Algorithm", val: eta.heuristic_mae, color: "var(--amber)", active: !mlBetter, desc: "Haversine + peak multipliers + dwell time" },
-              { label: "ML Model (RandomForest)", val: eta.ml_mae, color: "var(--neon)", active: !!mlBetter, desc: "Trained on real trip history · improves over time" },
-            ].map(m => (
-              <div key={m.label} style={{ borderRadius: 10, padding: 14, background: m.active ? "var(--neon-dim)" : "var(--bg-3)", border: `1px solid ${m.active ? "var(--neon-border)" : "var(--border)"}` }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: m.color, display: "inline-block" }} />
-                    <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text)" }}>{m.label}</span>
-                    {m.active && <span className="badge-neon badge" style={{ fontSize: 9 }}>Active</span>}
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Target size={15} className="text-primary" />ETA Model Comparison</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { label: "Heuristic Algorithm", val: eta.heuristic_mae, color: "text-amber-500", active: !mlBetter, desc: "Haversine + peak multipliers + dwell time" },
+                { label: "ML Model (RandomForest)", val: eta.ml_mae, color: "text-primary", active: !!mlBetter, desc: "Trained on real trip history · improves over time" },
+              ].map(m => (
+                <div key={m.label} className={`rounded-lg p-4 border ${m.active ? "bg-primary/5 border-primary/20" : "bg-muted/30 border-border"}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: `var(--${m.color === "text-amber-500" ? "warning" : "primary"})` }} />
+                      <span className="text-sm font-medium text-foreground">{m.label}</span>
+                      {m.active && <span className="badge badge-neon text-[9px]">Active</span>}
+                    </div>
+                    <TrendingUp size={13} className="text-muted-foreground" />
                   </div>
-                  <TrendingUp size={13} color="var(--text-3)" />
+                  <p className="text-3xl font-bold font-display tracking-tight" style={{ color: m.color === "text-amber-500" ? "var(--warning)" : "var(--primary)" }}>{m.val}s</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Mean Absolute Error</p>
+                  <div className="h-1 rounded-full overflow-hidden bg-muted-foreground/20 mt-3">
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min((m.val / 300) * 100, 100)}%`, background: m.color === "text-amber-500" ? "var(--warning)" : "var(--primary)" }} />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">{m.desc}</p>
                 </div>
-                <p style={{ fontSize: 28, fontWeight: 700, color: m.color, fontFamily: "var(--font-display)", letterSpacing: "-0.04em", marginBottom: 4 }}>{m.val}s</p>
-                <p style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 10 }}>Mean Absolute Error</p>
-                <div style={{ height: 4, borderRadius: 99, overflow: "hidden", background: "var(--bg-4)" }}>
-                  <div style={{ height: "100%", width: `${Math.min((m.val / 300) * 100, 100)}%`, background: m.color, transition: "width 0.7s ease" }} />
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {[
+                { label: "Samples", val: eta.sample_count ?? 0, color: "text-sky-500" },
+                { label: "ML Win Rate", val: `${eta.ml_win_rate ?? 0}%`, color: "text-emerald-500" },
+                { label: "Comparable", val: eta.comparable_count ?? 0, color: "text-violet-500" },
+              ].map(s => (
+                <div key={s.label} className="rounded-lg p-2.5 bg-muted/30 border border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                  <p className={`text-lg font-bold mt-1 ${s.color}`}>{s.val}</p>
                 </div>
-                <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 8 }}>{m.desc}</p>
+              ))}
+            </div>
+            {mlBetter && (
+              <div className="mt-3 flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
+                <TrendingUp size={14} />ML model is <strong>{(((eta.heuristic_mae - eta.ml_mae) / eta.heuristic_mae) * 100).toFixed(1)}%</strong> more accurate. Enable it in Settings.
               </div>
-            ))}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 12 }}>
-            <div style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 11, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Samples</p>
-              <p style={{ fontSize: 18, color: "var(--cyan)", fontWeight: 700, marginTop: 4 }}>{eta.sample_count ?? 0}</p>
-            </div>
-            <div style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 11, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>ML Win Rate</p>
-              <p style={{ fontSize: 18, color: "var(--green)", fontWeight: 700, marginTop: 4 }}>{eta.ml_win_rate ?? 0}%</p>
-            </div>
-            <div style={{ borderRadius: 8, padding: "10px 12px", background: "var(--bg-3)", border: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 11, color: "var(--text-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Comparable Rows</p>
-              <p style={{ fontSize: 18, color: "var(--purple)", fontWeight: 700, marginTop: 4 }}>{eta.comparable_count ?? 0}</p>
-            </div>
-          </div>
-          {mlBetter && (
-            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "var(--green-dim)", border: "1px solid var(--green-border)", color: "var(--green)", fontSize: 13 }}>
-              <TrendingUp size={14} />
-              ML model is <strong>{(((eta.heuristic_mae - eta.ml_mae) / eta.heuristic_mae) * 100).toFixed(1)}%</strong> more accurate. Enable it in Settings.
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Summary stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
-          { icon: <BarChart3 size={15} />, label: `Total Trips (${period}d)`, val: totalTrips, color: "var(--neon)" },
-          { icon: <BarChart3 size={15} />, label: "Avg/Day", val: Math.round(totalTrips / period * 10) / 10, color: "var(--cyan)" },
-          { icon: <Target size={15} />, label: "Heuristic MAE", val: `${eta?.heuristic_mae ?? 0}s`, color: "var(--amber)" },
-          { icon: <TrendingUp size={15} />, label: "ML MAE", val: `${eta?.ml_mae ?? 0}s`, color: eta && eta.ml_mae < eta.heuristic_mae ? "var(--green)" : "var(--neon)" },
+          { icon: <BarChart3 size={15} />, label: `Total Trips (${period}d)`, val: totalTrips, color: "text-primary" },
+          { icon: <BarChart3 size={15} />, label: "Avg/Day", val: Math.round(totalTrips / period * 10) / 10, color: "text-sky-500" },
+          { icon: <Target size={15} />, label: "Heuristic MAE", val: `${eta?.heuristic_mae ?? 0}s`, color: "text-amber-500" },
+          { icon: <TrendingUp size={15} />, label: "ML MAE", val: `${eta?.ml_mae ?? 0}s`, color: eta && eta.ml_mae < eta.heuristic_mae ? "text-emerald-500" : "text-primary" },
         ].map(s => (
-          <div key={s.label} className="card-sm" style={{ textAlign: "center" }}>
-            <span style={{ display: "flex", justifyContent: "center", marginBottom: 8, color: s.color }}>{s.icon}</span>
-            <p style={{ fontSize: 22, fontWeight: 700, color: s.color, fontFamily: "var(--font-display)" }}>{s.val}</p>
-            <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4 }}>{s.label}</p>
-          </div>
+          <Card key={s.label}>
+            <CardContent className="pt-4 pb-4 text-center">
+              <span className={`flex justify-center mb-2 ${s.color}`}>{s.icon}</span>
+              <p className={`text-2xl font-bold font-display ${s.color}`}>{s.val}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{s.label}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {insights && (
-        <div className="card">
-          <p className="section-title" style={{ marginBottom: 12 }}>Detailed Usage Insights (Last {insights.days} Days)</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={{ borderRadius: 10, padding: 12, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 6 }}>Most Used Route</p>
-              <p style={{ fontSize: 20, color: "var(--neon)", fontWeight: 700 }}>{insights.top_route?.route_number ?? "—"}</p>
-              <p style={{ fontSize: 12, color: "var(--text-3)", marginTop: 4 }}>{insights.top_route?.name ?? "No route name"}</p>
-              <p style={{ fontSize: 12, color: "var(--text-2)", marginTop: 6 }}>{insights.top_route?.trips ?? 0} trips</p>
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Detailed Usage Insights (Last {insights.days} Days)</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="rounded-lg p-3 bg-muted/30 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Most Used Route</p>
+                <p className="text-xl font-bold text-primary">{insights.top_route?.route_number ?? "—"}</p>
+                <p className="text-xs text-muted-foreground mt-1">{insights.top_route?.name ?? "No route name"}</p>
+                <p className="text-xs text-foreground/70 mt-1">{insights.top_route?.trips ?? 0} trips</p>
+              </div>
+              <div className="rounded-lg p-3 bg-muted/30 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Most Used Bus</p>
+                <p className="text-xl font-bold text-sky-500">{insights.top_vehicle?.plate_number ?? "—"}</p>
+                <p className="text-xs text-foreground/70 mt-1">{insights.top_vehicle?.trips ?? 0} assignments</p>
+              </div>
             </div>
-            <div style={{ borderRadius: 10, padding: 12, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 6 }}>Most Used Bus</p>
-              <p style={{ fontSize: 20, color: "var(--cyan)", fontWeight: 700 }}>{insights.top_vehicle?.plate_number ?? "—"}</p>
-              <p style={{ fontSize: 12, color: "var(--text-2)", marginTop: 6 }}>{insights.top_vehicle?.trips ?? 0} assignments</p>
+            <div className="mt-3 rounded-lg p-3 bg-muted/30 border border-border">
+              <p className="text-xs text-muted-foreground mb-2">Most Active Times and Top Route by Hour</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {insights.top_routes_by_hour.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No hourly assignment distribution yet.</p>
+                ) : insights.top_routes_by_hour.slice(0, 12).map((item) => (
+                  <div key={`${item.hour}-${item.top_route_number}`} className="rounded-lg p-2 border border-border bg-muted/20">
+                    <p className="text-[10px] text-muted-foreground">{String(item.hour).padStart(2, "0")}:00</p>
+                    <p className="text-sm font-bold text-foreground mt-0.5">{item.top_route_number}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.top_route_trips} trips</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          <div style={{ marginTop: 12, borderRadius: 10, padding: 12, background: "var(--bg-3)", border: "1px solid var(--border)" }}>
-            <p style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 8 }}>Most Active Times and Top Route by Hour</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-              {insights.top_routes_by_hour.length === 0 ? (
-                <p style={{ fontSize: 12, color: "var(--text-3)" }}>No hourly assignment distribution yet.</p>
-              ) : insights.top_routes_by_hour.slice(0, 12).map((item) => (
-                <div key={`${item.hour}-${item.top_route_number}`} style={{ borderRadius: 8, padding: "8px 10px", border: "1px solid var(--border)", background: "var(--bg-4)" }}>
-                  <p style={{ fontSize: 11, color: "var(--text-4)" }}>{String(item.hour).padStart(2, "0")}:00</p>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{item.top_route_number}</p>
-                  <p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{item.top_route_trips} trips</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {assignments && <div className="card"><p className="section-title" style={{ marginBottom: 14 }}>Assignments — Last {period} Days</p><AssignmentsChart data={assignments} /></div>}
-        {routeUsage && <div className="card"><p className="section-title" style={{ marginBottom: 14 }}>Route Usage — Last {period} Days</p><RouteUsageChart data={routeUsage} /></div>}
-        {occ && <div className="card"><p className="section-title" style={{ marginBottom: 14 }}>Occupancy Distribution</p><OccupancyChart data={occ} /></div>}
-        {tel && <div className="card"><p className="section-title" style={{ marginBottom: 14 }}>Telemetry Volume — Last 24h</p><TelemetryChart data={tel} /></div>}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {assignments && (<Card><CardHeader className="pb-2"><CardTitle className="text-sm">Assignments — Last {period} Days</CardTitle></CardHeader><CardContent><AssignmentsChart data={assignments} /></CardContent></Card>)}
+        {routeUsage && (<Card><CardHeader className="pb-2"><CardTitle className="text-sm">Route Usage — Last {period} Days</CardTitle></CardHeader><CardContent><RouteUsageChart data={routeUsage} /></CardContent></Card>)}
+        {occ && (<Card><CardHeader className="pb-2"><CardTitle className="text-sm">Occupancy Distribution</CardTitle></CardHeader><CardContent><OccupancyChart data={occ} /></CardContent></Card>)}
+        {tel && (<Card><CardHeader className="pb-2"><CardTitle className="text-sm">Telemetry Volume — Last 24h</CardTitle></CardHeader><CardContent><TelemetryChart data={tel} /></CardContent></Card>)}
       </div>
     </div>
   );

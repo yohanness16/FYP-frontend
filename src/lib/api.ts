@@ -143,6 +143,13 @@ export const crowdApi = {
     api.get(`/admin/crowd/${encodeURIComponent(plate_number)}`),
 };
 
+export const pairingApi = {
+  generateCode: (vehicle_id: number) =>
+    api.post(`/admin/vehicles/${vehicle_id}/generate-pairing-code`),
+  unpair: (vehicle_id: number) =>
+    api.post(`/admin/vehicles/${vehicle_id}/unpair`),
+};
+
 export const tripHistoryApi = {
   getByVehicle: (vehicle_id: number) =>
     api.get(`/admin/trip-history/vehicle/${vehicle_id}`),

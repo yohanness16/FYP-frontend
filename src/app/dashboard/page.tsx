@@ -8,7 +8,8 @@ import { RealTimeBusMapDynamic } from '@/components/Map/RealTimeBusMapDynamic';
 import { StatCard } from '@/components/ui/StatCard';
 import { PageLoader } from '@/components/ui/Spinner';
 import { AssignmentsChart, OccupancyChart, TelemetryChart, RouteUsageChart } from '@/components/charts/Charts';
-import { Radio, Bus, Route, Users, Activity, RefreshCw, Map, BarChart as BarChartIcon, Target, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Radio, Bus, Route, Users, Activity, RefreshCw, Map, Target, Info } from 'lucide-react';
 import { formatDateTime, getLocalTimeZone } from '@/lib/time';
 
 export default function DashboardPage() {
@@ -78,116 +79,101 @@ export default function DashboardPage() {
   if (loading) return <PageLoader />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '0 24px 48px' }}>
-      {/* Navigation Tabs */}
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', paddingBottom: 16 }}>
-        <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-          <button style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px',
-            background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
-            color: 'var(--text-2)', cursor: 'pointer', fontWeight: 500
-          }}>
-            <BarChartIcon size={16} /> Overview
-          </button>
-        </Link>
-        <Link href="/map" style={{ textDecoration: 'none' }}>
-          <button style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px',
-            background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
-            color: 'var(--text-2)', cursor: 'pointer', fontWeight: 500
-          }}>
-            <Map size={16} /> Live Map
-          </button>
-        </Link>
-      </div>
-
+    <div className="flex flex-col gap-5 pb-10">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}>Fleet Overview</h2>
-          <p style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>
+          <h2 className="font-display text-xl font-bold tracking-tight text-foreground">
+            Fleet Overview
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
             Updated {formatDateTime(lastUpdated)} ({getLocalTimeZone()}) · auto-refreshes every 30s
           </p>
         </div>
-        <button onClick={() => load(true)} disabled={refreshing} className="btn-secondary" style={{ gap: 6 }}>
-          <RefreshCw size={14} style={{ animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/map" className="btn-secondary text-sm no-underline">
+            <Map size={14} /> Live Map
+          </Link>
+          <button type="button" onClick={() => load(true)} disabled={refreshing} className="btn-secondary">
+            <RefreshCw size={14} style={{ animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-        <StatCard title="Active Trips"    value={summary?.active_assignments ?? '—'} subtitle="Live now"    icon={<Radio size={17} />}    color="var(--green)" />
-        <StatCard title="Vehicles"        value={summary?.vehicles ?? '—'}           subtitle="Registered"  icon={<Bus size={17} />}      color="var(--neon)" />
-        <StatCard title="Routes"          value={summary?.routes ?? '—'}             subtitle="Configured"  icon={<Route size={17} />}    color="var(--cyan)" />
-        <StatCard title="Users"           value={summary?.users ?? '—'}              subtitle="All roles"   icon={<Users size={17} />}    color="var(--purple)" />
-        <StatCard title="Telemetry 24h"   value={summary?.telemetry_last_24h?.toLocaleString() ?? '—'} subtitle="GPS pings" icon={<Activity size={17} />} color="var(--amber)" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard title="Active Trips"    value={summary?.active_assignments ?? '—'} subtitle="Live now"    icon={<Radio size={17} />}    color="var(--neon)" />
+        <StatCard title="Vehicles"        value={summary?.vehicles ?? '—'}           subtitle="Registered"  icon={<Bus size={17} />}      color="var(--neon-b)" />
+        <StatCard title="Routes"          value={summary?.routes ?? '—'}             subtitle="Configured"  icon={<Route size={17} />}    color="var(--success)" />
+        <StatCard title="Users"           value={summary?.users ?? '—'}              subtitle="All roles"   icon={<Users size={17} />}    color="var(--neon-p)" />
+        <StatCard title="Telemetry 24h"   value={summary?.telemetry_last_24h?.toLocaleString() ?? '—'} subtitle="GPS pings" icon={<Activity size={17} />} color="var(--warning)" />
       </div>
 
+      {/* ETA Accuracy row */}
       {eta && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-          <StatCard title="ETA MAE (heuristic)" value={eta.heuristic_mae ?? '—'} subtitle="Admin benchmark" icon={<Target size={17} />} color="var(--cyan)" />
-          <StatCard title="ETA MAE (ML)" value={eta.ml_mae ?? '—'} subtitle="When model trained" icon={<Target size={17} />} color="var(--purple)" />
-          <StatCard title="ML Win Rate" value={`${eta.ml_win_rate ?? 0}%`} subtitle="ML better than heuristic" icon={<Target size={17} />} color="var(--green)" />
-          <StatCard title="ETA Samples" value={eta.sample_count ?? 0} subtitle="Model performance rows" icon={<Activity size={17} />} color="var(--amber)" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard title="ETA MAE (heuristic)" value={eta.heuristic_mae ?? '—'} subtitle="Admin benchmark" icon={<Target size={17} />} color="var(--neon-b)" />
+          <StatCard title="ETA MAE (ML)" value={eta.ml_mae ?? '—'} subtitle="When model trained" icon={<Target size={17} />} color="var(--neon-p)" />
+          <StatCard title="ML Win Rate" value={`${eta.ml_win_rate ?? 0}%`} subtitle="ML better than heuristic" icon={<Target size={17} />} color="var(--success)" />
+          <StatCard title="ETA Samples" value={eta.sample_count ?? 0} subtitle="Model performance rows" icon={<Activity size={17} />} color="var(--warning)" />
         </div>
       )}
 
-      <div className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <Info size={16} color="var(--cyan)" style={{ marginTop: 1 }} />
-        <div>
-          <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>What ETA Preview Means</p>
-          <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
-            ETA Preview runs a simulated trip using the coordinates and stops you provide in Settings. It shows final ETA, heuristic baseline,
-            and which mode (ML or heuristic) produced the returned value so you can validate model behavior before production use.
-          </p>
-        </div>
-      </div>
+      {/* Info banner */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="flex items-start gap-3 pt-4 pb-4">
+          <Info size={16} className="text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">What ETA Preview Means</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              ETA Preview runs a simulated trip using the coordinates and stops you provide in Settings. It shows final ETA, heuristic baseline,
+              and which mode (ML or heuristic) produced the returned value so you can validate model behavior before production use.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Operational Insights */}
       {insights && (
-        <div className="card">
-          <p className="section-title" style={{ marginBottom: 12 }}>Operational Insights (Last {insights.days} Days)</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 12 }}>
-            <div style={{ borderRadius: 10, padding: 12, background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 11, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Used Route</p>
-              <p style={{ fontSize: 20, color: 'var(--neon)', fontWeight: 700, marginTop: 6 }}>{insights.top_route?.route_number ?? '—'}</p>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{insights.top_route?.name ?? 'No route data'} · {insights.top_route?.trips ?? 0} trips</p>
-            </div>
-            <div style={{ borderRadius: 10, padding: 12, background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 11, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most Used Bus</p>
-              <p style={{ fontSize: 20, color: 'var(--cyan)', fontWeight: 700, marginTop: 6 }}>{insights.top_vehicle?.plate_number ?? '—'}</p>
-              <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{insights.top_vehicle?.trips ?? 0} assignments started</p>
-            </div>
-            <div style={{ borderRadius: 10, padding: 12, background: 'var(--bg-3)', border: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 11, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Busiest Hours</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                {insights.busiest_hours.length === 0 ? (
-                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>No assignment data</span>
-                ) : insights.busiest_hours.map((h) => (
-                  <span key={h.hour} className="badge" style={{ fontSize: 11 }}>{String(h.hour).padStart(2, '0')}:00 · {h.trips} trips</span>
-                ))}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Operational Insights (Last {insights.days} Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border/60 bg-muted/40 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Most Used Route</p>
+                <p className="text-xl font-bold text-primary mt-1">{insights.top_route?.route_number ?? '—'}</p>
+                <p className="text-xs text-muted-foreground mt-1">{insights.top_route?.name ?? 'No route data'} · {insights.top_route?.trips ?? 0} trips</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-muted/40 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Most Used Bus</p>
+                <p className="text-xl font-bold text-sky-500 mt-1">{insights.top_vehicle?.plate_number ?? '—'}</p>
+                <p className="text-xs text-muted-foreground mt-1">{insights.top_vehicle?.trips ?? 0} assignments started</p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-muted/40 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Busiest Hours</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {insights.busiest_hours.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">No assignment data</span>
+                  ) : insights.busiest_hours.map((h) => (
+                    <span key={h.hour} className="badge badge-blue text-[10px]">{String(h.hour).padStart(2, '0')}:00 · {h.trips} trips</span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Real-time Bus Map — flex so Leaflet fills the card without layout overflow */}
-      <div
-        className="card"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          height: 'min(52vh, 560px)',
-          maxHeight: '70vh',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexShrink: 0 }}>
-          <Map size={15} color="var(--neon)" />
-          <span className="section-title">Live Bus Positions — Addis Ababa</span>
-        </div>
-        <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      {/* Real-time Bus Map */}
+      <Card className="flex flex-col" style={{ height: 'min(52vh, 560px)' }}>
+        <CardHeader className="flex flex-row items-center gap-2 pb-3 shrink-0">
+          <Map size={15} className="text-primary" />
+          <CardTitle className="text-base">Live Bus Positions — Addis Ababa</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 min-h-0 pb-4">
           <RealTimeBusMapDynamic
             vehicles={fleetVehicles}
             autoRefresh
@@ -195,34 +181,50 @@ export default function DashboardPage() {
             mapHeight="100%"
             positionIntervalMs={8000}
           />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Charts grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {assignments && (
-          <div className="card">
-            <p className="section-title" style={{ marginBottom: 14 }}>Assignments — Last 7 Days</p>
-            <AssignmentsChart data={assignments} />
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Assignments — Last 7 Days</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AssignmentsChart data={assignments} />
+            </CardContent>
+          </Card>
         )}
         {telemetry && (
-          <div className="card">
-            <p className="section-title" style={{ marginBottom: 14 }}>Telemetry Volume — Last 24h</p>
-            <TelemetryChart data={telemetry} />
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Telemetry Volume — Last 24h</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TelemetryChart data={telemetry} />
+            </CardContent>
+          </Card>
         )}
         {occupancy && (
-          <div className="card">
-            <p className="section-title" style={{ marginBottom: 14 }}>Occupancy Distribution</p>
-            <OccupancyChart data={occupancy} />
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Occupancy Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OccupancyChart data={occupancy} />
+            </CardContent>
+          </Card>
         )}
         {routeUsage && (
-          <div className="card">
-            <p className="section-title" style={{ marginBottom: 14 }}>Route Usage — Last 30 Days</p>
-            <RouteUsageChart data={routeUsage} />
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Route Usage — Last 30 Days</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RouteUsageChart data={routeUsage} />
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

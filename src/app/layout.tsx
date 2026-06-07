@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { SidebarProvider } from "@/hooks/useSidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "BusTrack Admin",
@@ -11,12 +11,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="font-sans" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <SidebarProvider>
+          <TooltipProvider>
             <AuthProvider>{children}</AuthProvider>
-          </SidebarProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

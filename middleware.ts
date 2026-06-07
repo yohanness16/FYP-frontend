@@ -28,6 +28,7 @@ const ADMIN_ROUTES = [
   "/dashboard",
   "/analytics",
   "/map",
+  "/crowd",
   "/vehicles",
   "/routes",
   "/assignments",
