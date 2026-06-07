@@ -29,10 +29,18 @@ export default function CrowdPage() {
 
   const loadCrowd = useCallback(async (targetPlate: string) => {
     if (!targetPlate) return;
-    setFetching(true); setError("");
-    try { const res = await crowdApi.getByPlate(targetPlate); setData(res.data as CrowdResponse); }
-    catch (err: unknown) { setData(null); setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "No CV data for this vehicle"); }
-    finally { setFetching(false); }
+    setFetching(true);
+    setError("");
+    try {
+      const res = await crowdApi.getByPlate(targetPlate);
+      setData(res.data as CrowdResponse);
+    } catch (err: unknown) {
+      setData(null);
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(detail || "No CV data for this vehicle");
+    } finally {
+      setFetching(false);
+    }
   }, []);
 
   useEffect(() => { if (!loading && plate) void loadCrowd(plate); }, [loading, plate, loadCrowd]);

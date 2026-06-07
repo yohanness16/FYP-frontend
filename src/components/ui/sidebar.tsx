@@ -468,7 +468,9 @@ function SidebarMenuButton({
   variant = "default",
   size = "default",
   tooltip,
+  render,
   className,
+  children,
   ...props
 }: React.ComponentProps<"button"> & {
   isActive?: boolean
@@ -478,18 +480,53 @@ function SidebarMenuButton({
   render?: React.ReactElement
 }) {
   const { isMobile, state } = useSidebar()
-  const [open, setOpen] = React.useState(false)
 
+  const buttonClasses = cn(sidebarMenuButtonVariants({ variant, size }), className)
+
+  // If render prop is provided (e.g., <Link href="...">), clone it with our classes and children
+  if (render) {
+    const renderEl = render as React.ReactElement<Record<string, unknown>>
+    const renderedElement = React.cloneElement(renderEl, {
+      className: cn(buttonClasses, renderEl.props.className as string | undefined),
+      "data-sidebar": "menu-button",
+      "data-slot": "sidebar-menu-button",
+      "data-size": size,
+      "data-active": isActive,
+      children: children ?? renderEl.props.children,
+    })
+
+    if (!tooltip) {
+      return renderedElement
+    }
+
+    const tooltipContent =
+      typeof tooltip === "string" ? { children: tooltip } : tooltip
+
+    return (
+      <Tooltip>
+        <TooltipTrigger render={renderedElement} />
+        <TooltipContent
+          side="right"
+          align="center"
+          hidden={state !== "collapsed" || isMobile}
+          {...tooltipContent}
+        />
+      </Tooltip>
+    )
+  }
+
+  // Default: render a plain button
   const btn = (
     <button
       data-sidebar="menu-button"
       data-slot="sidebar-menu-button"
       data-size={size}
       data-active={isActive}
-      className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-      aria-expanded={open}
+      className={buttonClasses}
       {...props}
-    />
+    >
+      {children}
+    </button>
   )
 
   if (!tooltip) {
@@ -501,7 +538,7 @@ function SidebarMenuButton({
 
   return (
     <Tooltip>
-      <TooltipTrigger render={btn}></TooltipTrigger>
+      <TooltipTrigger render={btn} />
       <TooltipContent
         side="right"
         align="center"
