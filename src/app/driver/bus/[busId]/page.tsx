@@ -133,8 +133,9 @@ export default function DriverBusDashboardPage() {
       setBusToken(unlocked.data.bus_token);
       setStage("driver");
       setBusPassword("");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to unlock bus dashboard");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Failed to unlock bus dashboard");
     } finally {
       setLoading(false);
     }
@@ -163,8 +164,9 @@ export default function DriverBusDashboardPage() {
       await loadBusAssignment(String(res.data.vehicle_id), String(res.data.driver_id));
       setStage("ride");
       setPassword("");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Driver login failed. Check credentials.");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Driver login failed. Check credentials.");
     } finally {
       setLoading(false);
     }

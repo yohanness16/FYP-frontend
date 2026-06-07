@@ -465,7 +465,7 @@ export default function BusDashboardPage() {
       } catch {
         // fallback empty
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Dashboard load error:", err);
     }
   }, []);
@@ -543,8 +543,9 @@ export default function BusDashboardPage() {
       setBusToken(res.data.access_token);
       setStage("driver");
       setBusPassword("");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to unlock bus dashboard");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Failed to unlock bus dashboard");
     } finally {
       setLoading(false);
     }
@@ -573,8 +574,9 @@ export default function BusDashboardPage() {
       await loadDashboard(String(data.vehicle_id));
       setStage("dashboard");
       setPassword("");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Driver login failed.");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Driver login failed.");
     } finally {
       setLoading(false);
     }
@@ -618,8 +620,9 @@ export default function BusDashboardPage() {
       await assignmentsApi.start(driverId, busData.id, routeId);
       setRideStatus("active");
       await loadDashboard(String(busData.id));
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to start ride");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Failed to start ride");
     }
   };
 
@@ -630,8 +633,9 @@ export default function BusDashboardPage() {
       setRideStatus("ended");
       setAssignment(null);
       if (busData) await loadDashboard(String(busData.id));
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to end ride");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Failed to end ride");
     }
   };
 
@@ -660,8 +664,9 @@ export default function BusDashboardPage() {
       const driverId = meRes.data.id;
       await assignmentsApi.start(driverId, busData.id, routeId);
       await loadDashboard(String(busData.id));
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to start assignment");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Failed to start assignment");
     }
   };
 
@@ -671,8 +676,9 @@ export default function BusDashboardPage() {
       setAssignment(null);
       setRideStatus("ended");
       if (busData) await loadDashboard(String(busData.id));
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to end assignment");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setError(msg || "Failed to end assignment");
     }
   };
 

@@ -35,7 +35,10 @@ function UserModal({ mode, initialValue, onClose, onSaved }: { mode: "create" | 
         ? await usersApi.createAdmin({ username: payload.username, email: payload.email, password: form.password.trim(), role: payload.role })
         : await usersApi.update(initialValue!.id, payload);
       onSaved(response.data); onClose();
-    } catch (err: unknown) { setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? "Failed to save user"); }
+    } catch (err: unknown) {
+        const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        setError(detail || "Failed to save user");
+      }
     finally { setSaving(false); }
   };
 

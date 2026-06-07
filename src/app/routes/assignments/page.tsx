@@ -32,7 +32,9 @@ export default function AssignmentsPage() {
       if (results[1].status === 'fulfilled') setRoutes(Array.isArray(results[1].value.data) ? results[1].value.data : []);
       if (results[2].status === 'fulfilled') setActiveAssignments(Array.isArray(results[2].value.data) ? results[2].value.data : []);
       if (results[3].status === 'fulfilled') setDrivers(Array.isArray(results[3].value.data) ? results[3].value.data : []);
-    } catch (err: any) { setError(err.message); }
+    } catch (err: unknown) {
+      setError((err as { message?: string })?.message || "Failed to load data");
+    }
     finally { setLoading(false); }
   }, []);
 
@@ -42,15 +44,30 @@ export default function AssignmentsPage() {
     e.preventDefault();
     if (!formData.driver_id || !formData.vehicle_id || !formData.route_id) { setError("Please select driver, vehicle, and route"); return; }
     setStarting(true); setError(null);
-    try { await assignmentsApi.start(formData.driver_id, formData.vehicle_id, formData.route_id); setFormData({ driver_id: 0, vehicle_id: 0, route_id: 0 }); await loadAll(); }
-    catch (err: any) { setError(err.response?.data?.detail || err.message); }
+    try {
+      await assignmentsApi.start(formData.driver_id, formData.vehicle_id, formData.route_id);
+      setFormData({ driver_id: 0, vehicle_id: 0, route_id: 0 });
+      await loadAll();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        || (err as { message?: string })?.message
+        || "Failed to start assignment";
+      setError(String(msg));
+    }
     finally { setStarting(false); }
   };
 
   const handleEnd = async (assignmentId: number) => {
     if (!confirm('End this assignment?')) return;
-    try { await assignmentsApi.end(assignmentId); await loadAll(); }
-    catch (err: any) { setError(err.response?.data?.detail || err.message); }
+    try {
+      await assignmentsApi.end(assignmentId);
+      await loadAll();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        || (err as { message?: string })?.message
+        || "Failed to end assignment";
+      setError(String(msg));
+    }
   };
 
   if (loading) return <PageLoader />;

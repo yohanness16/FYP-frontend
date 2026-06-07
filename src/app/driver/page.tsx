@@ -45,8 +45,8 @@ function DriverPageInner() {
       setVehiclePosition(posRes.data);
       setIsLoggedIn(true);
       setDriverId(driverIdValue);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load bus assignment');
+    } catch (err: unknown) {
+      setError((err as { message?: string })?.message || 'Failed to load bus assignment');
     } finally {
       setLoading(false);
     }
