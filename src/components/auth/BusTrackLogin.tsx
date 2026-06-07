@@ -42,10 +42,16 @@ export function BusTrackLogin() {
     try {
       await login(username, password);
     } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail || "Invalid credentials"
-      );
+      const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } };
+      if (axiosErr.response?.status === 500) {
+        setError("Server error. Please try again later or contact support.");
+      } else if (axiosErr.response?.status === 429) {
+        setError("Too many attempts. Please wait before trying again.");
+      } else {
+        setError(
+          axiosErr.response?.data?.detail || "Invalid credentials"
+        );
+      }
     } finally {
       setBusy(false);
     }

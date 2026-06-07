@@ -6,6 +6,7 @@ import { PageLoader } from "@/components/ui/Spinner";
 import { DataTable, ColDef } from "@/components/ui/DataTable";
 import { Card, CardContent } from "@/components/ui/card";
 import { Route as RouteIcon, MapPin, Plus, RefreshCw, ArrowRight, AlertCircle } from "lucide-react";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 function RouteModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [f, setF] = useState({ route_number: "", name: "", origin: "", destination: "" });
@@ -13,7 +14,7 @@ function RouteModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr("");
     try { await routesApi.create(f); onSaved(); onClose(); }
-    catch (x: unknown) { setErr((x as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed"); }
+    catch (x: unknown) { setErr(getErrorMessage(x, "Failed")); }
     finally { setBusy(false); }
   };
   return (
@@ -50,7 +51,7 @@ function StopModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr("");
     try { await routesApi.createStop({ name: f.name, lat: parseFloat(f.lat), lon: parseFloat(f.lon), base_dwell_time: parseInt(f.base_dwell_time), is_terminal: f.is_terminal, peak_multiplier: parseFloat(f.peak_multiplier) }); onSaved(); onClose(); }
-    catch (x: unknown) { setErr((x as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed"); }
+    catch (x: unknown) { setErr(getErrorMessage(x, "Failed")); }
     finally { setBusy(false); }
   };
   return (

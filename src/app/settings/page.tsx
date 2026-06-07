@@ -9,6 +9,7 @@ import {
   Brain, CheckCircle, Clock, Database, Info, Play, RefreshCw, Target, Trash2, XCircle, Zap, AlertCircle,
 } from "lucide-react";
 import { formatDateTime, getLocalTimeZone } from "@/lib/time";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 function Toast({ msg, type, onClose }: { msg: string; type: "success" | "error"; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
@@ -47,7 +48,7 @@ export default function SettingsPage() {
   const handleTrain = async () => {
     setTraining(true);
     try { const r = await adminApi.trainModel(); showToast(r.data.message || "Model trained successfully", "success"); pushLog("Train Model", r.data.message || "Success", "success"); await load(); }
-    catch (e: unknown) { const m = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Training failed"; showToast(m, "error"); pushLog("Train Model", m, "error"); }
+    catch (e: unknown) { const m = getErrorMessage(e, "Training failed"); showToast(m, "error"); pushLog("Train Model", m, "error"); }
     finally { setTraining(false); }
   };
 
@@ -71,7 +72,7 @@ export default function SettingsPage() {
     try {
       const r = await adminApi.etaPreview({ lat1: Number(previewForm.lat1), lon1: Number(previewForm.lon1), lat2: Number(previewForm.lat2), lon2: Number(previewForm.lon2), num_stops: Number(previewForm.num_stops || 0), base_dwell_time: Number(previewForm.base_dwell_time || 30), stop_id: previewForm.stop_id ? Number(previewForm.stop_id) : undefined, occupancy_level: Number(previewForm.occupancy_level || 0) });
       setPreview(r.data); pushLog("Run ETA Preview", `eta=${r.data.eta_seconds}s, heuristic=${r.data.heuristic_eta_seconds}s, mode=${r.data.mode}`, "success");
-    } catch (e: unknown) { const m = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "ETA preview failed"; showToast(m, "error"); pushLog("Run ETA Preview", m, "error"); }
+    } catch (e: unknown) { const m = getErrorMessage(e, "ETA preview failed"); showToast(m, "error"); pushLog("Run ETA Preview", m, "error"); }
     finally { setPreviewing(false); }
   };
 
