@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, User, Truck, MapPin, ArrowLeftRight, Edit, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Vehicle, Route, User as Driver } from '@/types';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface FormData {
   vehicle_number: string;
@@ -52,8 +53,8 @@ export default function AssignmentsPage() {
       if (vRes.status === 'fulfilled') setVehicles(vRes.value.data);
       if (rRes.status === 'fulfilled') setRoutes(rRes.value.data);
       if (dRes.status === 'fulfilled') setDrivers(dRes.value.data.filter((u: any) => u.role === 'driver'));
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -86,8 +87,8 @@ export default function AssignmentsPage() {
       setFormData({ vehicle_number: '', device_id: '', bus_type: '', capacity: 0, route_id: 0, driver_id: '', driver_password: '' });
       setEditingId(null);
       loadAllData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 
@@ -96,8 +97,8 @@ export default function AssignmentsPage() {
     try {
       await api.put(`/vehicles/${vehicleId}`, { driver_id: null });
       loadAllData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 

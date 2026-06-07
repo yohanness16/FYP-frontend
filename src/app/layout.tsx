@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 
 export const metadata: Metadata = {
   title: "BusTrack Admin",
@@ -15,7 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider>
           <TooltipProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <GlobalErrorBoundary>
+              <AuthProvider>{children}</AuthProvider>
+            </GlobalErrorBoundary>
           </TooltipProvider>
         </ThemeProvider>
       </body>

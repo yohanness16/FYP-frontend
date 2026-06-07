@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, MapPin, Truck, Route as RouteIcon, Users, Wifi, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Vehicle, VehiclePosition, Route, Assignment, User } from '@/types';
+import { getErrorMessage } from '@/lib/errorUtils';
 import {
   Dialog,
   DialogContent,
@@ -66,8 +67,8 @@ export default function AdminDashboard() {
       if (rRes.status === 'fulfilled') setRoutes(rRes.value.data);
       if (aRes.status === 'fulfilled') setAssignments(aRes.value.data);
       if (uRes.status === 'fulfilled') setUsers(uRes.value.data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load data');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to load data"));
     } finally {
       setLoading(false);
     }
@@ -85,8 +86,8 @@ export default function AdminDashboard() {
       setFormData({ plate_number: '', device_id: '', bus_type: '', capacity: undefined, route_id: undefined });
       setEditingId(null);
       loadAllData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save vehicle');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to save vehicle"));
     }
   };
 
@@ -95,8 +96,8 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/vehicles/${id}`);
       loadAllData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete vehicle');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to delete vehicle"));
     }
   };
 
@@ -104,8 +105,8 @@ export default function AdminDashboard() {
     try {
       await api.put(`/vehicles/${vehicleId}`, { route_id: routeId });
       loadAllData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to assign route');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to assign route"));
     }
   };
 

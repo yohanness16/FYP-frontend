@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, MapPin, Truck, Route } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Route as RouteType } from '@/types';
+import { SafeText } from '@/components/SafeText';
+import { getErrorMessage } from '@/lib/errorUtils';
 
 interface FormData {
   route_number: string;
@@ -37,8 +39,8 @@ export default function RoutesPage() {
     try {
       const res = await api.get('/routes');
       setRoutes(res.data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -56,8 +58,8 @@ export default function RoutesPage() {
       setFormData({ route_number: '', name: '', distance_km: 0, stops: [''] });
       setEditingId(null);
       loadRoutes();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 
@@ -66,8 +68,8 @@ export default function RoutesPage() {
     try {
       await api.delete(`/routes/${id}`);
       loadRoutes();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     }
   };
 
@@ -181,7 +183,7 @@ export default function RoutesPage() {
               {(route.stops ?? []).map((s, i) => (
                 <span key={i} className="text-sm">
                   <MapPin className="inline h-3 w-3 mr-1" />
-                  {typeof s === "string" ? s : (s as any).name ?? String(s)}{i < (route.stops ?? []).length - 1 && ' → '}
+                  <SafeText value={s} />{i < (route.stops ?? []).length - 1 && ' → '}
                 </span>
               ))}
             </div>
