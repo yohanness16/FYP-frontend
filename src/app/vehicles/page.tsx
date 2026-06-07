@@ -6,6 +6,7 @@ import { Route, Vehicle } from "@/types";
 import { PageLoader } from "@/components/ui/Spinner";
 import { DataTable, ColDef, TableAction } from "@/components/ui/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getErrorMessage } from "@/lib/errorUtils";
 import {
   AlertCircle, Bus, CheckCircle, Eye, EyeOff, MapPinned, Plus, RefreshCw,
   Route as RouteIcon, Shield, KeyRound, Truck, Unlink, XCircle,
@@ -30,8 +31,7 @@ function VehicleModal({ vehicle, routes, onClose, onSaved }: { vehicle: Vehicle;
       onSaved();
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg || "Failed to update vehicle");
+      setError(getErrorMessage(err, "Failed to update vehicle"));
     } finally {
       setBusy(false);
     }
@@ -95,8 +95,7 @@ function RegisterVehicleModal({ onClose, onSaved }: { onClose: () => void; onSav
       await vehiclesApi.create({ plate_number: form.plate_number.trim(), device_id: form.device_id.trim(), bus_type: form.bus_type || undefined, capacity: form.capacity ? Number(form.capacity) : undefined, is_active: form.is_active });
       onSaved(); onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg || "Vehicle registration failed");
+      setError(getErrorMessage(err, "Vehicle registration failed"));
     } finally {
       setSaving(false);
     }
@@ -162,8 +161,7 @@ function BusDashboardActivationModal({ vehicle, onClose, onSaved }: { vehicle: V
       onSaved();
       onClose();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg || "Failed to configure dashboard credentials");
+      setError(getErrorMessage(err, "Failed to configure dashboard credentials"));
     } finally {
       setSaving(false);
     }
@@ -227,8 +225,7 @@ function PairingCodeModal({ vehicle, onClose }: { vehicle: Vehicle; onClose: () 
         if (!cancelled) setResult(res.data);
       } catch (err: unknown) {
         if (!cancelled) {
-          const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-          setError(msg || "Failed to generate pairing code");
+          setError(getErrorMessage(err, "Failed to generate pairing code"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -303,8 +300,7 @@ export default function VehiclesPage() {
       await pairingApi.unpair(vehicle.id);
       void load();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      alert(msg || "Failed to unpair vehicle");
+      alert(getErrorMessage(err, "Failed to unpair vehicle"));
     }
   };
 

@@ -7,6 +7,7 @@ import { PageLoader } from "@/components/ui/Spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshCw, ScanEye, AlertCircle } from "lucide-react";
 import { formatDateTime } from "@/lib/time";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 type CrowdResponse = {
   plate_number: string;
@@ -36,8 +37,7 @@ export default function CrowdPage() {
       setData(res.data as CrowdResponse);
     } catch (err: unknown) {
       setData(null);
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail || "No CV data for this vehicle");
+      setError(getErrorMessage(err, "No CV data for this vehicle"));
     } finally {
       setFetching(false);
     }
