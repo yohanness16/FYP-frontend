@@ -483,20 +483,17 @@ function SidebarMenuButton({
 
   const buttonClasses = cn(sidebarMenuButtonVariants({ variant, size }), className)
 
-  // If render prop is provided (e.g., <Link href="...">), clone it with our classes and children
+  // If render prop provided (e.g., <Link>), place it inside a span wrapper
+  // so Base UI Tooltip can safely clone the span instead of the Link
   if (render) {
     const renderEl = render as React.ReactElement<Record<string, unknown>>
-    const renderedElement = React.cloneElement(renderEl, {
-      className: cn(buttonClasses, renderEl.props.className as string | undefined),
-      "data-sidebar": "menu-button",
-      "data-slot": "sidebar-menu-button",
-      "data-size": size,
-      "data-active": isActive,
-      children: children ?? renderEl.props.children,
-    })
+    const innerChildren = (renderEl.props as Record<string, unknown>)?.children;
+    const styledChild = React.cloneElement(renderEl, {
+      className: cn(buttonClasses, renderEl.props?.className as string),
+    });
 
     if (!tooltip) {
-      return renderedElement
+      return styledChild;
     }
 
     const tooltipContent =
@@ -504,7 +501,11 @@ function SidebarMenuButton({
 
     return (
       <Tooltip>
-        <TooltipTrigger render={renderedElement} />
+        <TooltipTrigger render={
+          <span className="contents" data-sidebar="menu-button" data-slot="sidebar-menu-button" data-size={size} data-active={isActive}>
+            {styledChild}
+          </span>
+        } />
         <TooltipContent
           side="right"
           align="center"
