@@ -50,7 +50,7 @@ function AdminSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
+            <SidebarMenuButton size="lg" isActive={pathname === "/dashboard"} tooltip="Dashboard" render={<Link href="/dashboard" />}>
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <BrandIcon className="size-4" />
               </div>
@@ -104,7 +104,7 @@ function AdminHeader() {
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background/80 px-4 backdrop-blur-sm sticky top-0 z-30">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur-sm px-4 sticky top-0 z-30">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <div className="flex flex-1 items-center justify-between gap-3">
@@ -176,7 +176,7 @@ export default function BusTrackShell({ children }: { children: React.ReactNode 
       <AdminSidebar />
       <SidebarInset>
         <AdminHeader />
-        <div className="flex-1 overflow-auto p-4 md:p-5">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </div>
       </SidebarInset>
