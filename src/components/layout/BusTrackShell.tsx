@@ -46,7 +46,7 @@ function AdminSidebar() {
   const BrandIcon = ADMIN_BRAND.icon;
 
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -104,7 +104,7 @@ function AdminHeader() {
   const { theme, toggle } = useTheme();
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background/80 px-4 backdrop-blur-sm">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background/80 px-4 backdrop-blur-sm sticky top-0 z-30">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <div className="flex flex-1 items-center justify-between gap-3">
@@ -174,9 +174,11 @@ export default function BusTrackShell({ children }: { children: React.ReactNode 
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset className="min-h-screen bg-background">
+      <SidebarInset>
         <AdminHeader />
-        <main className="flex-1 p-4 md:p-5">{children}</main>
+        <div className="flex-1 overflow-auto p-4 md:p-5">
+          {children}
+        </div>
       </SidebarInset>
       <ChatBot />
     </SidebarProvider>

@@ -68,7 +68,7 @@ export default function MapPage() {
   const allowedRouteIds = stopFilterId != null ? (routeIdsByStop[stopFilterId] || []) : null;
 
   return (
-    <div className="p-6 max-w-[1920px] mx-auto flex flex-col gap-0 min-h-[calc(100vh-48px)] box-border">
+    <div className="p-6 max-w-[1920px] mx-auto flex flex-col gap-0 box-border">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -119,7 +119,7 @@ export default function MapPage() {
       </div>
 
       {/* Map */}
-      <Card className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden" style={{ height: "calc(100vh - 220px)", maxHeight: "900px" }}>
+      <Card className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden h-[calc(100vh-220px)] max-h-[900px]">
         <RealTimeBusMapDynamic vehicles={vehicles} routeFilterId={routeFilterId} allowedRouteIds={allowedRouteIds} densityFilter={densityFilter} minCapacity={minCapacity} autoRefresh useLiveWs mapHeight="100%" positionIntervalMs={4000} />
       </Card>
 

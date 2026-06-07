@@ -168,7 +168,7 @@ export default function DashboardPage() {
       )}
 
       {/* Real-time Bus Map */}
-      <Card className="flex flex-col" style={{ height: 'min(52vh, 560px)' }}>
+      <Card className="flex flex-col min-h-0 h-[min(52vh,560px)]">
         <CardHeader className="flex flex-row items-center gap-2 pb-3 shrink-0">
           <Map size={15} className="text-primary" />
           <CardTitle className="text-base">Live Bus Positions — Addis Ababa</CardTitle>
