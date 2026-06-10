@@ -217,7 +217,7 @@ function PairingCodeModal({ vehicle, onClose }: { vehicle: Vehicle; onClose: () 
   const [result, setResult] = useState<{ code: string; expires_in_seconds: number; message?: string } | null>(null);
 
   useEffect(() => {
-    let cancelled = true;
+    let cancelled = false;
     (async () => {
       setLoading(true); setError("");
       try {

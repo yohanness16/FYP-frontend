@@ -144,7 +144,7 @@ export default function DriverBusDashboardPage() {
           data.device_id || deviceId,
           busPassword,
         );
-        setBusToken(loginRes.data.bus_token);
+        setBusToken(loginRes.data.access_token);
       } else {
         // Legacy flow: device_id + password
         if (!deviceId.trim()) {
@@ -153,7 +153,7 @@ export default function DriverBusDashboardPage() {
           return;
         }
         const unlocked = await authApi.busDashboardLogin(Number(busId), deviceId, busPassword);
-        setBusToken(unlocked.data.bus_token);
+        setBusToken(unlocked.data.access_token);
       }
       setStage("driver");
       setBusPassword("");
@@ -179,8 +179,8 @@ export default function DriverBusDashboardPage() {
     try {
       const res = await authApi.driverLogin(username, password, deviceId, busToken);
 
-      localStorage.setItem("driver_token", res.data.token);
-      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("driver_token", res.data.access_token);
+      localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("driver_session_id", String(res.data.session_id));
       localStorage.setItem("assigned_bus_id", String(res.data.vehicle_id));
       localStorage.setItem("driver_id", String(res.data.driver_id));
