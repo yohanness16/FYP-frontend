@@ -146,6 +146,8 @@ export const crowdApi = {
 export const pairingApi = {
   generateCode: (vehicle_id: number) =>
     api.post(`/admin/vehicles/${vehicle_id}/generate-pairing-code`),
+  verify: (code: string, password: string) =>
+    api.post("/pair/verify", { code, password }),
   unpair: (vehicle_id: number) =>
     api.post(`/admin/vehicles/${vehicle_id}/unpair`),
 };

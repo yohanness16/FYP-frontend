@@ -18,7 +18,7 @@ import {
   CheckCircle,
   Volume2,
 } from "lucide-react";
-import { api, authApi, routesApi, assignmentsApi, crowdApi, tripHistoryApi, announcementsApi } from "@/lib/api";
+import { api, authApi, pairingApi, routesApi, assignmentsApi, crowdApi, tripHistoryApi, announcementsApi } from "@/lib/api";
 import { VehiclePosition, CvData, TripHistoryEntry } from "@/types";
 import { RealTimeBusMapDynamic } from "@/components/Map/RealTimeBusMapDynamic";
 import { BusDashboardHeader } from "@/components/bus-dashboard/BusDashboardHeader";
@@ -331,6 +331,8 @@ export default function BusDashboardPage() {
 
   // Auth forms
   const [deviceId, setDeviceId] = useState("");
+  const [pairingCode, setPairingCode] = useState("");
+  const [usePairingCode, setUsePairingCode] = useState(true);
   const [busPassword, setBusPassword] = useState("");
   const [showBusPass, setShowBusPass] = useState(false);
   const [username, setUsername] = useState("");
@@ -539,8 +541,30 @@ export default function BusDashboardPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await authApi.busDashboardLogin(Number(busId), deviceId, busPassword);
-      setBusToken(res.data.access_token);
+      if (usePairingCode && pairingCode.trim()) {
+        // New flow: verify pairing code + password
+        const res = await pairingApi.verify(pairingCode.trim(), busPassword);
+        const data = res.data;
+        if (data.status !== "paired") {
+          throw new Error(data.message || "Pairing verification failed");
+        }
+        // After pairing, fall back to device-login to get a bus token
+        const loginRes = await authApi.busDashboardLogin(
+          Number(busId),
+          data.device_id || deviceId,
+          busPassword,
+        );
+        setBusToken(loginRes.data.access_token);
+      } else {
+        // Legacy flow: device_id + password
+        if (!deviceId.trim()) {
+          setError("Device ID is required");
+          setLoading(false);
+          return;
+        }
+        const res = await authApi.busDashboardLogin(Number(busId), deviceId, busPassword);
+        setBusToken(res.data.access_token);
+      }
       setStage("driver");
       setBusPassword("");
     } catch (err: unknown) {
@@ -793,17 +817,60 @@ export default function BusDashboardPage() {
           <div className="card-glow p-6">
             {isUnlock ? (
               <form onSubmit={unlockBus} className="space-y-4">
-                <div>
-                  <label className="label">Device ID (SIM7600 IMEI)</label>
-                  <input
-                    className="input"
-                    value={deviceId}
-                    onChange={(e) => setDeviceId(e.target.value)}
-                    placeholder="Enter bus IoT device ID"
-                    required
-                    autoFocus
-                  />
+                {/* Unlock method toggle */}
+                <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setUsePairingCode(true)}
+                    className="flex-1 py-2 text-xs font-medium transition-colors"
+                    style={{
+                      background: usePairingCode ? "var(--neon)" : "transparent",
+                      color: usePairingCode ? "#030507" : "var(--text3)",
+                    }}
+                  >
+                    Pairing Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUsePairingCode(false)}
+                    className="flex-1 py-2 text-xs font-medium transition-colors"
+                    style={{
+                      background: !usePairingCode ? "var(--neon)" : "transparent",
+                      color: !usePairingCode ? "#030507" : "var(--text3)",
+                    }}
+                  >
+                    Device ID
+                  </button>
                 </div>
+
+                {usePairingCode ? (
+                  <div>
+                    <label className="label">Pairing Code</label>
+                    <input
+                      className="input font-mono tracking-wider"
+                      value={pairingCode}
+                      onChange={(e) => setPairingCode(e.target.value)}
+                      placeholder="e.g. BUS-XXXX-XXXX"
+                      required
+                      autoFocus
+                    />
+                    <p className="text-[10px] mt-1" style={{ color: "var(--text3)" }}>
+                      Enter the 5-minute code generated from the admin panel.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="label">Device ID (SIM7600 IMEI)</label>
+                    <input
+                      className="input"
+                      value={deviceId}
+                      onChange={(e) => setDeviceId(e.target.value)}
+                      placeholder="Enter bus IoT device ID"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="label">Bus Dashboard Password</label>
                   <div className="relative">
