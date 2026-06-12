@@ -21,17 +21,20 @@ export function getErrorMessage(err: unknown, fallback = "Something went wrong")
     // detail is a string — use it directly
     if (typeof detail === "string") return detail;
 
-    // detail is an array of validation error objects — extract first message
+    // detail is an array of validation error objects — show all messages with location
     if (Array.isArray(detail) && detail.length > 0) {
-      const first = detail[0];
-      if (first && typeof first === "object" && "msg" in first && typeof first.msg === "string") {
-        return first.msg;
-      }
-      // Fallback: join all messages
-      const msgs = detail
-        .filter((d: unknown) => d && typeof d === "object" && "msg" in d && typeof (d as { msg: unknown }).msg === "string")
-        .map((d: { msg: string }) => d.msg);
-      if (msgs.length > 0) return msgs.join("; ");
+      const msgs = detail.map((d: unknown) => {
+        if (d && typeof d === "object") {
+          const obj = d as { msg?: string; loc?: unknown; type?: string; input?: unknown };
+          const parts: string[] = [];
+          if (obj.msg) parts.push(obj.msg);
+          if (obj.loc) parts.push(`(at: ${Array.isArray(obj.loc) ? obj.loc.join(" → ") : obj.loc})`);
+          if (obj.type && !obj.msg) parts.push(`[${obj.type}]`);
+          return parts.length > 0 ? parts.join(" ") : JSON.stringify(d);
+        }
+        return String(d);
+      });
+      return msgs.join("; ");
     }
 
     // detail is an unknown object — try to stringify

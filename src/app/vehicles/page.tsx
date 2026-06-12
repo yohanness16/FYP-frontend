@@ -132,7 +132,7 @@ function RegisterVehicleModal({ onClose, onSaved }: { onClose: () => void; onSav
           <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm((c) => ({ ...c, is_active: e.target.checked }))} className="accent-primary" />Active in fleet
           </label>
-          {error && <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"><AlertCircle size={13} />{error}</div>}
+          {error && <div className="flex flex-col gap-1 p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs dark:bg-red-950/30 dark:border-red-800 dark:text-red-400"><div className="flex items-center gap-2"><AlertCircle size={13} /><span className="font-semibold">Registration failed</span></div><span className="pl-5 break-all whitespace-pre-wrap">{error}</span></div>}
           <div className="flex gap-2 mt-1">
             <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary flex-1 justify-center">{saving ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white inline-block animate-spin" /> : "Register"}</button>
